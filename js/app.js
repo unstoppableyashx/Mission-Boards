@@ -1,4 +1,4 @@
-// js/app.js - FINAL VERSION (Note-Taking Friendly + Keyboard Controls)
+// js/app.js - FINAL (Strip Shields + Auto Fullscreen)
 
 // --- 1. DOM ELEMENTS ---
 const uiContent = document.getElementById('content-area');
@@ -17,8 +17,7 @@ const uiGlobalStatus = document.getElementById('global-status');
 const uiBackBtn = document.getElementById('static-back-btn');
 
 let currentUserDoc = null; 
-let players = {}; // Store YouTube Player instances
-let activePlayerId = null; // Track which video is active for keyboard controls
+let players = {}; 
 
 // --- 2. AUTHENTICATION ---
 auth.onAuthStateChanged(async (user) => {
@@ -31,51 +30,6 @@ auth.onAuthStateChanged(async (user) => {
         if(uiLoading) uiLoading.classList.add('hidden');
         if(uiAuthBox) uiAuthBox.classList.remove('hidden');
         if(uiAppBox) uiAppBox.classList.add('hidden');
-    }
-});
-
-// GLOBAL KEYBOARD LISTENER
-document.addEventListener('keydown', (e) => {
-    if (!activePlayerId || !players[activePlayerId]) return;
-    
-    const player = players[activePlayerId];
-    // Check if player function exists
-    if(typeof player.getPlayerState !== 'function') return;
-
-    // SPACE: Play/Pause
-    if (e.code === 'Space') {
-        e.preventDefault(); // Scroll hone se rokein
-        const state = player.getPlayerState();
-        if (state === 1) player.pauseVideo();
-        else player.playVideo();
-    }
-    // LEFT ARROW: Seek Back 5s
-    else if (e.code === 'ArrowLeft') {
-        const time = player.getCurrentTime();
-        player.seekTo(Math.max(time - 5, 0));
-    }
-    // RIGHT ARROW: Seek Forward 5s
-    else if (e.code === 'ArrowRight') {
-        const time = player.getCurrentTime();
-        const duration = player.getDuration();
-        player.seekTo(Math.min(time + 5, duration));
-    }
-    // UP ARROW: Volume Up
-    else if (e.code === 'ArrowUp') {
-        e.preventDefault();
-        const vol = player.getVolume();
-        player.setVolume(Math.min(vol + 10, 100));
-    }
-    // DOWN ARROW: Volume Down
-    else if (e.code === 'ArrowDown') {
-        e.preventDefault();
-        const vol = player.getVolume();
-        player.setVolume(Math.max(vol - 10, 0));
-    }
-    // 'F' KEY: Fullscreen
-    else if (e.key.toLowerCase() === 'f') {
-        const cardId = 'card-' + activePlayerId;
-        toggleFullScreen(cardId);
     }
 });
 
@@ -116,7 +70,6 @@ function renderDashboard(user, uid) {
     const currentDay = user.currentDay || 1;
     const mathsCh = user.mathsChapter || 1;
     
-    // UI RESET
     if(uiGlobalStatus) uiGlobalStatus.classList.remove('hidden');
     if(uiMathsHeader) uiMathsHeader.classList.add('hidden');
     
@@ -134,7 +87,7 @@ function renderDashboard(user, uid) {
     renderStudyMode(currentDay, mathsCh, uid);
 }
 
-// --- 5. RENDER STUDY MODE ---
+// --- 5. RENDER STUDY MODE (Dashboard Cards) ---
 function renderStudyMode(day, mathsCh, uid) {
     if (typeof curriculum === 'undefined') { uiContent.innerHTML = `<h3>Data Error</h3>`; return; }
     const dayData = curriculum.find(d => d.day === day);
@@ -144,16 +97,16 @@ function renderStudyMode(day, mathsCh, uid) {
     if(uiTimer) uiTimer.innerHTML = `<span style="color:#10b981">● ACTIVE</span>`;
     players = {}; 
 
-    // Phys/Chem
+    // Phys/Chem (Now using Trigger Mode for Auto-Fullscreen)
     ['physics', 'chemistry'].forEach(sub => {
         if(dayData.videos[sub]) {
             const vid = dayData.videos[sub];
-            uiContent.innerHTML += createSmartVideoCard(sub, vid.title, vid.id);
-            setTimeout(() => initSmartPlayer(vid.id), 500);
+            // Use Trigger Card: User clicks -> Video loads & goes Fullscreen
+            uiContent.innerHTML += createTriggerCard(sub, vid.title, vid.id);
         }
     });
 
-    // Maths
+    // Maths Section
     if (typeof mathsCurriculum !== 'undefined') renderMathsSection(mathsCh, uid);
 
     const btnDiv = document.createElement('div');
@@ -164,7 +117,7 @@ function renderStudyMode(day, mathsCh, uid) {
 
     setTimeout(() => {
         document.getElementById('complete-day-btn').addEventListener('click', async () => {
-            if(!confirm("Day Completed?")) return;
+            if(!confirm("Completed?")) return;
             await db.collection('users').doc(uid).update({ currentDay: day + 1, progress: (day/30)*100, lastCompletedAt: new Date() });
             location.reload();
         });
@@ -184,16 +137,18 @@ function renderMathsSection(mathsCh, uid) {
     wrapper.innerHTML = `<h3 style="color:#3b82f6; font-family:'JetBrains Mono'; margin-bottom:20px;">📐 MATHEMATICS ZONE</h3>
         <div id="maths-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:20px;"></div>`;
 
+    // Maths Active Card
     const activeCard = document.createElement('div');
     activeCard.className = 'video-card';
     activeCard.style.border = "1px solid #3b82f6";
-    activeCard.innerHTML = `<div class="video-header" style="background:rgba(59, 130, 246, 0.1)">
+    activeCard.innerHTML = `
+        <div class="video-header" style="background:rgba(59, 130, 246, 0.1)">
             <div class="video-subject" style="color:#3b82f6">CURRENT • CH ${mathsCh}</div>
             <div class="video-title">${mData.title}</div>
         </div>
-        <div style="padding:20px; text-align:center;">
-            <p style="color:#94a3b8; font-size:0.9rem;">Target: ${mData.target}</p>
-            <button class="btn btn-primary" id="open-maths-btn">OPEN PLAYLIST ▶</button>
+        <div style="padding:40px; text-align:center; cursor:pointer;" onclick="document.getElementById('open-maths-btn').click()">
+            <div style="font-size:3rem; margin-bottom:10px;">▶</div>
+            <button class="btn btn-primary" id="open-maths-btn">OPEN PLAYLIST</button>
         </div>`;
 
     const nextCh = parseInt(mathsCh) + 1;
@@ -209,7 +164,10 @@ function renderMathsSection(mathsCh, uid) {
 
     uiContent.appendChild(wrapper);
     setTimeout(() => {
-        document.getElementById('open-maths-btn').addEventListener('click', () => renderMathsExpanded(mathsCh, mData, uid));
+        document.getElementById('open-maths-btn').addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent double trigger
+            renderMathsExpanded(mathsCh, mData, uid);
+        });
     }, 100);
 }
 
@@ -223,17 +181,18 @@ function renderMathsExpanded(chNum, data, uid) {
     if(uiGlobalStatus) uiGlobalStatus.classList.add('hidden');
     if(uiMathsHeader) uiMathsHeader.classList.remove('hidden');
     if(uiMathsTitle) uiMathsTitle.innerText = `Ch ${chNum}: ${data.title}`;
+    
     if(uiMathsSub) {
-        uiMathsSub.innerText = `Daily Progress: ${dailyCount}/2 Chapters`;
+        uiMathsSub.innerText = limitReached ? "Daily Limit Reached" : "Active Session";
         uiMathsSub.style.color = limitReached ? '#ef4444' : '#10b981';
     }
 
     uiContent.innerHTML = ''; 
-    players = {}; // Reset
+    players = {}; 
 
+    // Use Trigger Cards here too for consistency
     data.videos.forEach((vid, index) => {
-        uiContent.innerHTML += createSmartVideoCard(`Part ${index + 1}`, vid.title, vid.id);
-        setTimeout(() => initSmartPlayer(vid.id), 500);
+        uiContent.innerHTML += createTriggerCard(`Part ${index + 1}`, vid.title, vid.id);
     });
 
     const finishDiv = document.createElement('div');
@@ -242,7 +201,7 @@ function renderMathsExpanded(chNum, data, uid) {
     if (limitReached) {
         finishDiv.innerHTML = `<button class="btn btn-danger" disabled>DAILY LIMIT REACHED (2/2)</button>`;
     } else {
-        finishDiv.innerHTML = `<button class="btn btn-primary" style="background:#10b981; color:#000;" id="finish-maths">I HAVE STUDIED 2.5 HOURS / FINISHED</button>`;
+        finishDiv.innerHTML = `<button class="btn btn-primary" style="background:#10b981; color:#000;" id="finish-maths">CHAPTER FINISHED</button>`;
     }
     uiContent.appendChild(finishDiv);
 
@@ -250,7 +209,7 @@ function renderMathsExpanded(chNum, data, uid) {
         const btn = document.getElementById('finish-maths');
         if(btn && !limitReached) {
             btn.addEventListener('click', async () => {
-                if(!confirm("Did you actually complete the target?")) return;
+                if(!confirm("Confirm?")) return;
                 await db.collection('users').doc(uid).update({
                     mathsChapter: parseInt(chNum) + 1, mathsDailyCount: dailyCount + 1, mathsLastDate: todayStr
                 });
@@ -262,12 +221,9 @@ function renderMathsExpanded(chNum, data, uid) {
     }, 100);
 }
 
-// --- 8. SMART VIDEO CARD (Precision Blocker) ---
-function createSmartVideoCard(subject, title, videoId) {
-    const divId = 'player-wrapper-' + videoId;
-    const overlayId = 'pause-overlay-' + videoId;
+// --- 8A. TRIGGER CARD (Initial State: Just an Image) ---
+function createTriggerCard(subject, title, videoId) {
     const cardId = 'card-' + videoId;
-
     return `
     <div class="video-card" id="${cardId}">
         <div class="video-header">
@@ -276,61 +232,49 @@ function createSmartVideoCard(subject, title, videoId) {
         </div>
         <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; background:black;">
             
-            <div id="${divId}" style="position:absolute; top:0; left:0; width:100%; height:100%;"></div>
-
-            <div id="${overlayId}" class="pause-overlay" onclick="resumeVideo('${videoId}')"></div>
-
-            <div style="position:absolute; top:0; left:0; width:100%; height:60px; z-index:20;"></div>
-
-            <div class="gradient-blocker" onclick="toggleFullScreen('${cardId}')" title="Full Screen">
-                <span class="custom-fs-btn"></span>
+            <div class="play-trigger" onclick="activateAndFullscreen('${videoId}', '${cardId}')">
+                <div class="play-icon-big">▶</div>
+            </div>
+            
+            <div id="player-wrapper-${videoId}" style="position:absolute; top:0; left:0; width:100%; height:100%;">
+                <img src="https://img.youtube.com/vi/${videoId}/hqdefault.jpg" style="width:100%; height:100%; object-fit:cover; opacity:0.6;">
             </div>
 
         </div>
     </div>`;
 }
 
-// --- 9. API LOGIC ---
-function initSmartPlayer(videoId) {
-    const divId = 'player-wrapper-' + videoId;
-    if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
-        setTimeout(() => initSmartPlayer(videoId), 1000);
-        return;
-    }
+// --- 8B. ACTIVATION LOGIC (Loads Player + Shields) ---
+window.activateAndFullscreen = function(videoId, cardId) {
+    const wrapper = document.getElementById('player-wrapper-' + videoId);
+    const trigger = wrapper.previousElementSibling; // The play button div
+    
+    // 1. Hide the play trigger
+    trigger.style.display = 'none';
 
-    players[videoId] = new YT.Player(divId, {
+    // 2. Inject the Shields & Player Structure
+    wrapper.innerHTML = `
+        <div id="yt-target-${videoId}"></div>
+        
+        <div class="shield-top"></div>
+
+        <div class="shield-suggestions"></div>
+
+        <div class="gradient-blocker" onclick="toggleFullScreen('${cardId}')">
+            <span class="custom-fs-btn"></span>
+        </div>
+    `;
+
+    // 3. Initialize YouTube Player
+    players[videoId] = new YT.Player(`yt-target-${videoId}`, {
         height: '100%', width: '100%', videoId: videoId,
         playerVars: { 
-            'modestbranding': 1, 'rel': 0, 'controls': 1, 'fs': 0, 'iv_load_policy': 3 
-        },
-        events: {
-            'onStateChange': (event) => onPlayerStateChange(event, videoId)
+            'modestbranding': 1, 'rel': 0, 'controls': 1, 'fs': 0, 'iv_load_policy': 3, 'autoplay': 1 
         }
     });
-}
 
-function onPlayerStateChange(event, videoId) {
-    const overlay = document.getElementById('pause-overlay-' + videoId);
-    
-    // State 1 = Playing
-    if (event.data === 1) {
-        if(overlay) overlay.style.display = 'none'; // Shield hata do, controls use karne do
-        activePlayerId = videoId;
-    } 
-    // State 2 = Paused, 0 = Ended
-    else if (event.data === 2 || event.data === 0) {
-        if(overlay) overlay.style.display = 'block'; // Shield laga do (Transparent)
-    }
-}
-
-// Resume Function (Jab invisible shield par click ho)
-window.resumeVideo = function(videoId) {
-    const player = players[videoId];
-    if (player && typeof player.playVideo === 'function') {
-        player.playVideo();
-        // Turant shield hatao taaki user ko wait na karna pade
-        document.getElementById('pause-overlay-' + videoId).style.display = 'none';
-    }
+    // 4. Trigger Fullscreen
+    toggleFullScreen(cardId);
 };
 
 window.toggleFullScreen = function(elementId) {
@@ -343,14 +287,6 @@ window.toggleFullScreen = function(elementId) {
     }
 };
 
-// --- 10. MODES ---
-function renderLockMode(lastTime) {
-    uiContent.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:50px;"><h1 style="color:#ef4444">COOLDOWN ACTIVE</h1><h2>Rest for 2 Hours</h2></div>`;
-}
-function renderSundayMode() {
-    uiContent.innerHTML = `<h1 style="color:white; text-align:center; grid-column:1/-1">SUNDAY REVISION</h1>`;
-}
-
-
-
-
+// --- MODES ---
+function renderLockMode() { uiContent.innerHTML = `<h1 style="color:red;text-align:center;padding:50px;">COOLDOWN ACTIVE</h1>`; }
+function renderSundayMode() { uiContent.innerHTML = `<h1 style="color:white;text-align:center;">SUNDAY</h1>`; }
