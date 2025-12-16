@@ -1,4 +1,4 @@
-// js/app.js - SMART SHIELD VERSION
+// js/app.js - CLEAN PAUSE VERSION
 
 // --- 1. DOM ELEMENTS ---
 const uiContent = document.getElementById('content-area');
@@ -17,6 +17,7 @@ const uiGlobalStatus = document.getElementById('global-status');
 const uiBackBtn = document.getElementById('static-back-btn');
 
 let currentUserDoc = null; 
+let players = {}; // Store YouTube Player instances
 
 // --- 2. AUTHENTICATION ---
 auth.onAuthStateChanged(async (user) => {
@@ -32,7 +33,6 @@ auth.onAuthStateChanged(async (user) => {
     }
 });
 
-// BACK BUTTON LOGIC
 if (uiBackBtn) {
     uiBackBtn.addEventListener('click', () => {
         if (document.fullscreenElement) document.exitFullscreen();
@@ -94,19 +94,21 @@ function renderStudyMode(day, mathsCh, uid) {
 
     uiContent.innerHTML = ''; 
     if(uiTimer) uiTimer.innerHTML = `<span style="color:#10b981">● ACTIVE</span>`;
+    players = {}; // Reset players
 
     // Phys/Chem
     ['physics', 'chemistry'].forEach(sub => {
         if(dayData.videos[sub]) {
             const vid = dayData.videos[sub];
-            uiContent.innerHTML += createSafeVideoCard(sub, vid.title, vid.id);
+            uiContent.innerHTML += createSmartVideoCard(sub, vid.title, vid.id);
+            // We need to initialize players after they are in DOM
+            setTimeout(() => initSmartPlayer(vid.id), 500);
         }
     });
 
     // Maths
     if (typeof mathsCurriculum !== 'undefined') renderMathsSection(mathsCh, uid);
 
-    // Complete Button
     const btnDiv = document.createElement('div');
     btnDiv.style.gridColumn = "1/-1"; btnDiv.style.textAlign = "center"; btnDiv.style.marginTop = "30px";
     btnDiv.innerHTML = `<div style="width:100%; height:1px; background:#334155; margin:20px 0;"></div>
@@ -115,7 +117,7 @@ function renderStudyMode(day, mathsCh, uid) {
 
     setTimeout(() => {
         document.getElementById('complete-day-btn').addEventListener('click', async () => {
-            if(!confirm("Physics & Chemistry done?")) return;
+            if(!confirm("Complete?")) return;
             await db.collection('users').doc(uid).update({ currentDay: day + 1, progress: (day/30)*100, lastCompletedAt: new Date() });
             location.reload();
         });
@@ -180,8 +182,11 @@ function renderMathsExpanded(chNum, data, uid) {
     }
 
     uiContent.innerHTML = ''; 
+    players = {}; // Reset
+
     data.videos.forEach((vid, index) => {
-        uiContent.innerHTML += createSafeVideoCard(`Part ${index + 1}`, vid.title, vid.id);
+        uiContent.innerHTML += createSmartVideoCard(`Part ${index + 1}`, vid.title, vid.id);
+        setTimeout(() => initSmartPlayer(vid.id), 500);
     });
 
     const finishDiv = document.createElement('div');
@@ -198,7 +203,7 @@ function renderMathsExpanded(chNum, data, uid) {
         const btn = document.getElementById('finish-maths');
         if(btn && !limitReached) {
             btn.addEventListener('click', async () => {
-                if(!confirm("Target Completed?")) return;
+                if(!confirm("Confirm completion?")) return;
                 await db.collection('users').doc(uid).update({
                     mathsChapter: parseInt(chNum) + 1, mathsDailyCount: dailyCount + 1, mathsLastDate: todayStr
                 });
@@ -210,33 +215,32 @@ function renderMathsExpanded(chNum, data, uid) {
     }, 100);
 }
 
-// --- 8. SMART SHIELD VIDEO CARD (Blocks Redirect, Allows Controls) ---
-function createSafeVideoCard(subject, title, videoId) {
-    const uniqueId = 'card-' + Math.random().toString(36).substr(2, 9);
-    
+// --- 8. SMART VIDEO CARD (API POWERED CLEAN PAUSE) ---
+function createSmartVideoCard(subject, title, videoId) {
+    const divId = 'player-wrapper-' + videoId;
+    const overlayId = 'pause-overlay-' + videoId;
+    const cardId = 'card-' + videoId;
+
     return `
-    <div class="video-card" id="${uniqueId}">
+    <div class="video-card" id="${cardId}">
         <div class="video-header">
             <div class="video-subject">${subject}</div>
             <div class="video-title">${title}</div>
         </div>
         <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; background:black;">
             
-            <iframe 
-                style="position:absolute; top:0; left:0; width:100%; height:100%;" 
-                src="https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&controls=1&fs=0" 
-                title="YouTube video player" 
-                frameborder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen>
-            </iframe>
-            
-            <div style="position:absolute; top:0; left:0; width:100%; height:60px; z-index:20;"></div>
-            
-            <div style="position:absolute; bottom:35px; right:0; width:120px; height:60px; z-index:20;"></div>
+            <div id="${divId}" style="position:absolute; top:0; left:0; width:100%; height:100%;"></div>
 
-            <button onclick="toggleFullScreen('${uniqueId}')" style="
-                position:absolute; bottom:10px; right:10px; z-index:50;
+            <div id="${overlayId}" class="pause-overlay" onclick="resumeVideo('${videoId}')">
+                <div class="resume-icon">▶</div>
+                <div style="color:white; font-family:'Inter';">Click to Resume</div>
+            </div>
+
+            <div style="position:absolute; top:0; left:0; width:100%; height:60px; z-index:20;"></div>
+            <div style="position:absolute; bottom:40px; right:0; width:100px; height:50px; z-index:20;"></div>
+
+            <button onclick="toggleFullScreen('${cardId}')" style="
+                position:absolute; bottom:10px; right:10px; z-index:60;
                 background:rgba(0,0,0,0.6); color:white; border:1px solid rgba(255,255,255,0.3);
                 padding:5px 10px; border-radius:4px; cursor:pointer; font-size:0.8rem;">
                 ⛶ Full Screen
@@ -245,7 +249,56 @@ function createSafeVideoCard(subject, title, videoId) {
     </div>`;
 }
 
-// --- 9. FULLSCREEN LOGIC ---
+// --- 9. YOUTUBE API LOGIC ---
+function initSmartPlayer(videoId) {
+    const divId = 'player-wrapper-' + videoId;
+    
+    // Check if API is ready
+    if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
+        setTimeout(() => initSmartPlayer(videoId), 1000); // Wait and retry
+        return;
+    }
+
+    players[videoId] = new YT.Player(divId, {
+        height: '100%',
+        width: '100%',
+        videoId: videoId,
+        playerVars: {
+            'modestbranding': 1,
+            'rel': 0,
+            'controls': 1,
+            'fs': 0, // Disable native fs to use ours
+            'iv_load_policy': 3
+        },
+        events: {
+            'onStateChange': (event) => onPlayerStateChange(event, videoId)
+        }
+    });
+}
+
+function onPlayerStateChange(event, videoId) {
+    const overlay = document.getElementById('pause-overlay-' + videoId);
+    
+    // If Paused (2) or Ended (0), Show Overlay
+    if (event.data === 2 || event.data === 0) {
+        if(overlay) overlay.style.display = 'flex';
+    } 
+    // If Playing (1) or Buffering (3), Hide Overlay
+    else if (event.data === 1 || event.data === 3) {
+        if(overlay) overlay.style.display = 'none';
+    }
+}
+
+window.resumeVideo = function(videoId) {
+    const player = players[videoId];
+    if (player && typeof player.playVideo === 'function') {
+        player.playVideo();
+        // Hide overlay immediately for better UX
+        const overlay = document.getElementById('pause-overlay-' + videoId);
+        if(overlay) overlay.style.display = 'none';
+    }
+};
+
 window.toggleFullScreen = function(elementId) {
     const elem = document.getElementById(elementId);
     if (!document.fullscreenElement) {
