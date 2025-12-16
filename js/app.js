@@ -1,4 +1,4 @@
-// js/app.js - CLEAN PAUSE VERSION
+// js/app.js - FINAL VERSION (Note-Taking Friendly + Keyboard Controls)
 
 // --- 1. DOM ELEMENTS ---
 const uiContent = document.getElementById('content-area');
@@ -18,6 +18,7 @@ const uiBackBtn = document.getElementById('static-back-btn');
 
 let currentUserDoc = null; 
 let players = {}; // Store YouTube Player instances
+let activePlayerId = null; // Track which video is active for keyboard controls
 
 // --- 2. AUTHENTICATION ---
 auth.onAuthStateChanged(async (user) => {
@@ -33,6 +34,52 @@ auth.onAuthStateChanged(async (user) => {
     }
 });
 
+// GLOBAL KEYBOARD LISTENER
+document.addEventListener('keydown', (e) => {
+    if (!activePlayerId || !players[activePlayerId]) return;
+    
+    const player = players[activePlayerId];
+    // Check if player function exists
+    if(typeof player.getPlayerState !== 'function') return;
+
+    // SPACE: Play/Pause
+    if (e.code === 'Space') {
+        e.preventDefault(); // Scroll hone se rokein
+        const state = player.getPlayerState();
+        if (state === 1) player.pauseVideo();
+        else player.playVideo();
+    }
+    // LEFT ARROW: Seek Back 5s
+    else if (e.code === 'ArrowLeft') {
+        const time = player.getCurrentTime();
+        player.seekTo(Math.max(time - 5, 0));
+    }
+    // RIGHT ARROW: Seek Forward 5s
+    else if (e.code === 'ArrowRight') {
+        const time = player.getCurrentTime();
+        const duration = player.getDuration();
+        player.seekTo(Math.min(time + 5, duration));
+    }
+    // UP ARROW: Volume Up
+    else if (e.code === 'ArrowUp') {
+        e.preventDefault();
+        const vol = player.getVolume();
+        player.setVolume(Math.min(vol + 10, 100));
+    }
+    // DOWN ARROW: Volume Down
+    else if (e.code === 'ArrowDown') {
+        e.preventDefault();
+        const vol = player.getVolume();
+        player.setVolume(Math.max(vol - 10, 0));
+    }
+    // 'F' KEY: Fullscreen
+    else if (e.key.toLowerCase() === 'f') {
+        const cardId = 'card-' + activePlayerId;
+        toggleFullScreen(cardId);
+    }
+});
+
+// BACK BUTTON
 if (uiBackBtn) {
     uiBackBtn.addEventListener('click', () => {
         if (document.fullscreenElement) document.exitFullscreen();
@@ -69,6 +116,7 @@ function renderDashboard(user, uid) {
     const currentDay = user.currentDay || 1;
     const mathsCh = user.mathsChapter || 1;
     
+    // UI RESET
     if(uiGlobalStatus) uiGlobalStatus.classList.remove('hidden');
     if(uiMathsHeader) uiMathsHeader.classList.add('hidden');
     
@@ -94,14 +142,13 @@ function renderStudyMode(day, mathsCh, uid) {
 
     uiContent.innerHTML = ''; 
     if(uiTimer) uiTimer.innerHTML = `<span style="color:#10b981">● ACTIVE</span>`;
-    players = {}; // Reset players
+    players = {}; 
 
     // Phys/Chem
     ['physics', 'chemistry'].forEach(sub => {
         if(dayData.videos[sub]) {
             const vid = dayData.videos[sub];
             uiContent.innerHTML += createSmartVideoCard(sub, vid.title, vid.id);
-            // We need to initialize players after they are in DOM
             setTimeout(() => initSmartPlayer(vid.id), 500);
         }
     });
@@ -117,7 +164,7 @@ function renderStudyMode(day, mathsCh, uid) {
 
     setTimeout(() => {
         document.getElementById('complete-day-btn').addEventListener('click', async () => {
-            if(!confirm("Complete?")) return;
+            if(!confirm("Day Completed?")) return;
             await db.collection('users').doc(uid).update({ currentDay: day + 1, progress: (day/30)*100, lastCompletedAt: new Date() });
             location.reload();
         });
@@ -203,7 +250,7 @@ function renderMathsExpanded(chNum, data, uid) {
         const btn = document.getElementById('finish-maths');
         if(btn && !limitReached) {
             btn.addEventListener('click', async () => {
-                if(!confirm("Confirm completion?")) return;
+                if(!confirm("Did you actually complete the target?")) return;
                 await db.collection('users').doc(uid).update({
                     mathsChapter: parseInt(chNum) + 1, mathsDailyCount: dailyCount + 1, mathsLastDate: todayStr
                 });
@@ -215,7 +262,7 @@ function renderMathsExpanded(chNum, data, uid) {
     }, 100);
 }
 
-// --- 8. SMART VIDEO CARD (API POWERED CLEAN PAUSE) ---
+// --- 8. SMART VIDEO CARD (Transparent Pause Shield) ---
 function createSmartVideoCard(subject, title, videoId) {
     const divId = 'player-wrapper-' + videoId;
     const overlayId = 'pause-overlay-' + videoId;
@@ -232,44 +279,32 @@ function createSmartVideoCard(subject, title, videoId) {
             <div id="${divId}" style="position:absolute; top:0; left:0; width:100%; height:100%;"></div>
 
             <div id="${overlayId}" class="pause-overlay" onclick="resumeVideo('${videoId}')">
-                <div class="resume-icon">▶</div>
-                <div style="color:white; font-family:'Inter';">Click to Resume</div>
+                <div class="resume-icon-container">
+                    <span class="resume-icon">▶</span>
+                </div>
             </div>
 
             <div style="position:absolute; top:0; left:0; width:100%; height:60px; z-index:20;"></div>
             <div style="position:absolute; bottom:40px; right:0; width:100px; height:50px; z-index:20;"></div>
 
-            <button onclick="toggleFullScreen('${cardId}')" style="
-                position:absolute; bottom:10px; right:10px; z-index:60;
-                background:rgba(0,0,0,0.6); color:white; border:1px solid rgba(255,255,255,0.3);
-                padding:5px 10px; border-radius:4px; cursor:pointer; font-size:0.8rem;">
-                ⛶ Full Screen
+            <button class="custom-fs-btn" onclick="toggleFullScreen('${cardId}')">
+                ⛶
             </button>
         </div>
     </div>`;
 }
 
-// --- 9. YOUTUBE API LOGIC ---
+// --- 9. YOUTUBE API + KEYBOARD LOGIC ---
 function initSmartPlayer(videoId) {
     const divId = 'player-wrapper-' + videoId;
-    
-    // Check if API is ready
     if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
-        setTimeout(() => initSmartPlayer(videoId), 1000); // Wait and retry
+        setTimeout(() => initSmartPlayer(videoId), 1000);
         return;
     }
 
     players[videoId] = new YT.Player(divId, {
-        height: '100%',
-        width: '100%',
-        videoId: videoId,
-        playerVars: {
-            'modestbranding': 1,
-            'rel': 0,
-            'controls': 1,
-            'fs': 0, // Disable native fs to use ours
-            'iv_load_policy': 3
-        },
+        height: '100%', width: '100%', videoId: videoId,
+        playerVars: { 'modestbranding': 1, 'rel': 0, 'controls': 1, 'fs': 0, 'iv_load_policy': 3 },
         events: {
             'onStateChange': (event) => onPlayerStateChange(event, videoId)
         }
@@ -279,13 +314,14 @@ function initSmartPlayer(videoId) {
 function onPlayerStateChange(event, videoId) {
     const overlay = document.getElementById('pause-overlay-' + videoId);
     
-    // If Paused (2) or Ended (0), Show Overlay
-    if (event.data === 2 || event.data === 0) {
-        if(overlay) overlay.style.display = 'flex';
-    } 
-    // If Playing (1) or Buffering (3), Hide Overlay
-    else if (event.data === 1 || event.data === 3) {
+    // Playing
+    if (event.data === 1) {
         if(overlay) overlay.style.display = 'none';
+        activePlayerId = videoId; // Set active for keyboard shortcuts
+    } 
+    // Paused (2) or Ended (0)
+    else if (event.data === 2 || event.data === 0) {
+        if(overlay) overlay.style.display = 'flex'; // Show transparent shield
     }
 }
 
@@ -293,9 +329,7 @@ window.resumeVideo = function(videoId) {
     const player = players[videoId];
     if (player && typeof player.playVideo === 'function') {
         player.playVideo();
-        // Hide overlay immediately for better UX
-        const overlay = document.getElementById('pause-overlay-' + videoId);
-        if(overlay) overlay.style.display = 'none';
+        document.getElementById('pause-overlay-' + videoId).style.display = 'none';
     }
 };
 
