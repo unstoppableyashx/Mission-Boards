@@ -49,7 +49,7 @@
         .video-title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 1rem; }
         .video-subject { font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 600; }
 
-        /* --- 1. PLAY TRIGGER (Click to Start) --- */
+        /* --- 1. PLAY TRIGGER (Initial State) --- */
         .play-trigger {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.3); z-index: 60;
@@ -57,54 +57,44 @@
             cursor: pointer; transition: background 0.3s;
         }
         .play-trigger:hover { background: rgba(0,0,0,0.1); }
-        .play-icon-big { font-size: 4rem; color: rgba(255,255,255,0.9); filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); transition: transform 0.2s; }
+        .play-icon-big {
+            font-size: 4rem; color: rgba(255,255,255,0.9);
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+            transition: transform 0.2s;
+        }
         .play-trigger:hover .play-icon-big { transform: scale(1.1); }
 
         /* --- 2. INVISIBLE PAUSE SHIELD --- */
+        /* Completely transparent, allows seeing board while blocking clicks */
         .pause-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0) !important; 
             display: none; z-index: 40; cursor: pointer;
         }
 
-        /* --- 3. CUSTOM STRIP SHIELDS (NEW) --- */
-        /* Top Shield: Blocks Title */
-        .shield-top {
-            position: absolute;
-            top: 0; left: 0; width: 100%;
-            height: 70px; /* Adjust height here */
-            z-index: 30;
-            background: transparent; /* Invisible */
-        }
-
-        /* Middle Shield: Blocks Suggestions (50px to 150px) */
-        .shield-middle {
-            position: absolute;
-            bottom: 50px; /* Controls ko chhod kar yahan se shuru */
-            left: 0; width: 100%;
-            height: 120px; /* Is height tak block karega */
-            z-index: 30;
-            background: transparent; /* Invisible */
-        }
-
-        /* --- 4. GRADIENT BLOCKER (Logo Only) --- */
+        /* --- 3. GRADIENT BLOCKER (Perfect Position) --- */
+        /* Bottom se 50px upar taaki seek bar use kar sakein */
+        /* Width kam taaki settings button na chhupe */
         .gradient-blocker {
             position: absolute;
-            bottom: 50px; right: 0; width: 90px; height: 50px;
+            bottom: 0px;  /* Safe distance from seek bar */
+            right: 0;
+            width: 90px;   /* Only covers logo area */
+            height: 39px;
             z-index: 55;
             background: linear-gradient(to left, rgba(0,0,0,0.95), transparent);
             cursor: pointer; pointer-events: auto;
             display: flex; align-items: center; justify-content: center;
         }
 
-        /* --- 5. CUSTOM FULLSCREEN ICON --- */
+        /* --- 4. CUSTOM FULLSCREEN ICON --- */
         .custom-fs-btn {
             background: transparent; border: none;
             color: rgba(255, 255, 255, 0.9); font-size: 1.8rem;
             cursor: pointer; padding: 0;
             filter: drop-shadow(0 0 2px black); pointer-events: none;
         }
-        .custom-fs-btn::after { content: '⛶'; }
+        .custom-fs-btn::after { content: '?'; }
 
     </style>
 </head>
@@ -151,7 +141,7 @@
                     <h2 id="maths-header-title" style="margin:0; font-family:'JetBrains Mono';">Maths</h2>
                     <span id="maths-header-subtitle" style="font-size:0.85rem; color:var(--text-secondary);">Status</span>
                 </div>
-                <button id="static-back-btn" class="btn btn-outline" style="border-color:var(--accent-blue); color:var(--accent-blue);">← Back</button>
+                <button id="static-back-btn" class="btn btn-outline" style="border-color:var(--accent-blue); color:var(--accent-blue);">? Back</button>
             </div>
 
             <div id="content-area"></div>
