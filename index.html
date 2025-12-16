@@ -1,162 +1,160 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mission Boards | Command Center</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    
-    <style>
-        /* --- THEME --- */
-        :root {
-            --bg-body: #0f172a; --bg-card: #1e293b; --bg-hover: #334155;
-            --text-main: #f8fafc; --text-secondary: #94a3b8;
-            --accent-blue: #3b82f6; --accent-green: #10b981; --accent-red: #ef4444;
-            --border-color: #334155;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
-        .hidden { display: none !important; }
-        .container { width: 100%; max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mission Boards | Command Center</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- THEME --- */
+        :root {
+            --bg-body: #0f172a; --bg-card: #1e293b; --bg-hover: #334155;
+            --text-main: #f8fafc; --text-secondary: #94a3b8;
+            --accent-blue: #3b82f6; --accent-green: #10b981; --accent-red: #ef4444;
+            --border-color: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+        .hidden { display: none !important; }
+        .container { width: 100%; max-width: 1280px; margin: 0 auto; padding: 0 24px; }
 
-        /* --- LOADING & AUTH --- */
-        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-body); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .spinner { width: 40px; height: 40px; border: 3px solid var(--bg-hover); border-top-color: var(--accent-blue); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 16px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        #auth-container { flex: 1; display: flex; align-items: center; justify-content: center; }
-        .auth-card { background: var(--bg-card); padding: 48px; border-radius: 16px; border: 1px solid var(--border-color); width: 100%; max-width: 400px; text-align: center; }
-        input { width: 100%; padding: 12px; margin-bottom: 15px; background: var(--bg-body); border: 1px solid var(--border-color); color: white; border-radius: 8px; outline: none; }
+        /* --- LOADING & AUTH --- */
+        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-body); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner { width: 40px; height: 40px; border: 3px solid var(--bg-hover); border-top-color: var(--accent-blue); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 16px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #auth-container { flex: 1; display: flex; align-items: center; justify-content: center; }
+        .auth-card { background: var(--bg-card); padding: 48px; border-radius: 16px; border: 1px solid var(--border-color); width: 100%; max-width: 400px; text-align: center; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; background: var(--bg-body); border: 1px solid var(--border-color); color: white; border-radius: 8px; outline: none; }
 
-        /* --- UI ELEMENTS --- */
-        .navbar { background: var(--bg-card); border-bottom: 1px solid var(--border-color); height: 70px; display: flex; align-items: center; position: sticky; top: 0; z-index: 100; }
-        .nav-content { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-        .day-badge { background: rgba(59,130,246,0.15); color: var(--accent-blue); padding: 4px 10px; border-radius: 6px; font-family: 'JetBrains Mono'; margin-left: 10px; }
-        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; }
-        .btn-primary { background: var(--accent-blue); color: white; }
-        .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); }
-        .btn-danger { background: rgba(239,68,68,0.1); color: var(--accent-red); border: 1px solid rgba(239,68,68,0.2); }
-        
-        .status-panel { background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); padding: 20px; margin: 30px 0; display: flex; align-items: center; }
-        .progress-track { width: 100%; height: 8px; background: var(--bg-body); border-radius: 4px; overflow: hidden; margin-top: 8px; }
-        .progress-fill { height: 100%; background: var(--accent-green); width: 0%; transition: width 0.6s ease; }
+        /* --- UI ELEMENTS --- */
+        .navbar { background: var(--bg-card); border-bottom: 1px solid var(--border-color); height: 70px; display: flex; align-items: center; position: sticky; top: 0; z-index: 100; }
+        .nav-content { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .day-badge { background: rgba(59,130,246,0.15); color: var(--accent-blue); padding: 4px 10px; border-radius: 6px; font-family: 'JetBrains Mono'; margin-left: 10px; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; }
+        .btn-primary { background: var(--accent-blue); color: white; }
+        .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); }
+        .btn-danger { background: rgba(239,68,68,0.1); color: var(--accent-red); border: 1px solid rgba(239,68,68,0.2); }
+        
+        .status-panel { background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); padding: 20px; margin: 30px 0; display: flex; align-items: center; }
+        .progress-track { width: 100%; height: 8px; background: var(--bg-body); border-radius: 4px; overflow: hidden; margin-top: 8px; }
+        .progress-fill { height: 100%; background: var(--accent-green); width: 0%; transition: width 0.6s ease; }
 
-        #content-area { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 24px; padding-bottom: 50px; }
-        .video-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; transition: transform 0.2s; position: relative; }
-        .video-header { padding: 16px; border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.02); }
-        .video-title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 1rem; }
-        .video-subject { font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 600; }
+        #content-area { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 24px; padding-bottom: 50px; }
+        .video-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; transition: transform 0.2s; position: relative; }
+        .video-header { padding: 16px; border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.02); }
+        .video-title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 1rem; }
+        .video-subject { font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 600; }
 
-        /* --- 1. PLAY TRIGGER (Initial State) --- */
-        .play-trigger {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.3); z-index: 60;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: background 0.3s;
-        }
-        .play-trigger:hover { background: rgba(0,0,0,0.1); }
-        .play-icon-big {
-            font-size: 4rem; color: rgba(255,255,255,0.9);
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
-            transition: transform 0.2s;
-        }
-        .play-trigger:hover .play-icon-big { transform: scale(1.1); }
+        /* --- 1. PLAY TRIGGER (Initial State) --- */
+        .play-trigger {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3); z-index: 60;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: background 0.3s;
+        }
+        .play-trigger:hover { background: rgba(0,0,0,0.1); }
+        .play-icon-big {
+            font-size: 4rem; color: rgba(255,255,255,0.9);
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+            transition: transform 0.2s;
+        }
+        .play-trigger:hover .play-icon-big { transform: scale(1.1); }
 
-        /* --- 2. INVISIBLE PAUSE SHIELD --- */
-        /* Completely transparent, allows seeing board while blocking clicks */
-        .pause-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0) !important; 
-            display: none; z-index: 40; cursor: pointer;
-        }
+        /* --- 2. INVISIBLE PAUSE SHIELD --- */
+        /* Completely transparent, allows seeing board while blocking clicks */
+        .pause-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0) !important; 
+            display: none; z-index: 40; cursor: pointer;
+        }
 
-        /* --- 3. GRADIENT BLOCKER (Perfect Position) --- */
-        /* Bottom se 50px upar taaki seek bar use kar sakein */
-        /* Width kam taaki settings button na chhupe */
-        .gradient-blocker {
-            position: absolute;
-            bottom: 0px;  /* Safe distance from seek bar */
-            right: 0;
-            width: 90px;   /* Only covers logo area */
-            height: 39px;
-            z-index: 55;
-            background: linear-gradient(to left, rgba(0,0,0,0.95), transparent);
-            cursor: pointer; pointer-events: auto;
-            display: flex; align-items: center; justify-content: center;
-        }
+        /* --- 3. GRADIENT BLOCKER (Your Custom Setting) --- */
+        .gradient-blocker {
+            position: absolute;
+            bottom: 0px;  /* Aapka set kiya hua */
+            right: 0;
+            width: 90px;   
+            height: 39px;
+            z-index: 55;
+            background: linear-gradient(to left, rgba(0,0,0,0.95), transparent);
+            cursor: pointer; pointer-events: auto;
+            display: flex; align-items: center; justify-content: center;
+        }
 
-        /* --- 4. CUSTOM FULLSCREEN ICON --- */
-        .custom-fs-btn {
-            background: transparent; border: none;
-            color: rgba(255, 255, 255, 0.9); font-size: 1.8rem;
-            cursor: pointer; padding: 0;
-            filter: drop-shadow(0 0 2px black); pointer-events: none;
-        }
-        .custom-fs-btn::after { content: '⛶'; }
+        /* --- 4. CUSTOM FULLSCREEN ICON --- */
+        .custom-fs-btn {
+            background: transparent; border: none;
+            color: rgba(255, 255, 255, 0.9); font-size: 1.8rem;
+            cursor: pointer; padding: 0;
+            filter: drop-shadow(0 0 2px black); pointer-events: none;
+        }
+        .custom-fs-btn::after { content: '⛶'; }
 
-    </style>
+    </style>
 </head>
 <body>
 
-    <div id="loading-screen"><div class="spinner"></div><div style="font-family:'JetBrains Mono'; color:var(--text-secondary);">LOADING SYSTEM...</div></div>
+    <div id="loading-screen"><div class="spinner"></div><div style="font-family:'JetBrains Mono'; color:var(--text-secondary);">LOADING SYSTEM...</div></div>
 
-    <div id="auth-container" class="container">
-        <div class="auth-card">
-            <h1>MISSION BOARDS</h1>
-            <form id="login-form">
-                <input type="email" id="email" placeholder="Cadet ID" required>
-                <input type="password" id="password" placeholder="Access Code" required>
-                <button type="submit" class="btn btn-primary">INITIALIZE</button>
-            </form>
-            <p id="auth-error" style="color:var(--accent-red); margin-top:15px;"></p>
-        </div>
-    </div>
+    <div id="auth-container" class="container">
+        <div class="auth-card">
+            <h1>MISSION BOARDS</h1>
+            <form id="login-form">
+                <input type="email" id="email" placeholder="Cadet ID" required>
+                <input type="password" id="password" placeholder="Access Code" required>
+                <button type="submit" class="btn btn-primary">INITIALIZE</button>
+            </form>
+            <p id="auth-error" style="color:var(--accent-red); margin-top:15px;"></p>
+        </div>
+    </div>
 
-    <div id="app-container" class="hidden">
-        <nav class="navbar">
-            <div class="container nav-content">
-                <div style="font-weight:700; font-size:1.2rem;">MISSION BOARDS <span id="day-badge" class="day-badge">DAY 01</span></div>
-                <div style="display:flex; gap:10px;">
-                    <button class="btn btn-outline" onclick="window.open('https://google.com', '_blank')">Intel</button>
-                    <button id="logout-btn" class="btn btn-danger">Abort</button>
-                </div>
-            </div>
-        </nav>
+    <div id="app-container" class="hidden">
+        <nav class="navbar">
+            <div class="container nav-content">
+                <div style="font-weight:700; font-size:1.2rem;">MISSION BOARDS <span id="day-badge" class="day-badge">DAY 01</span></div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-outline" onclick="window.open('https://google.com', '_blank')">Intel</button>
+                    <button id="logout-btn" class="btn btn-danger">Abort</button>
+                </div>
+            </div>
+        </nav>
 
-        <main class="container">
-            <div id="global-status" class="status-panel">
-                <div style="flex:1; margin-right:40px;">
-                    <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:var(--text-secondary);">
-                        <span>Progress</span> <span id="progress-percent">0%</span>
-                    </div>
-                    <div class="progress-track"><div class="progress-fill" id="progress-bar"></div></div>
-                </div>
-                <div id="timer-display" style="font-family:'JetBrains Mono'; color:var(--accent-green);">SYNCING...</div>
-            </div>
+        <main class="container">
+            <div id="global-status" class="status-panel">
+                <div style="flex:1; margin-right:40px;">
+                    <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:var(--text-secondary);">
+                        <span>Progress</span> <span id="progress-percent">0%</span>
+                    </div>
+                    <div class="progress-track"><div class="progress-fill" id="progress-bar"></div></div>
+                </div>
+                <div id="timer-display" style="font-family:'JetBrains Mono'; color:var(--accent-green);">SYNCING...</div>
+            </div>
 
-            <div id="maths-nav-header" class="hidden" style="margin:30px 0; padding-bottom:15px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between;">
-                <div>
-                    <h2 id="maths-header-title" style="margin:0; font-family:'JetBrains Mono';">Maths</h2>
-                    <span id="maths-header-subtitle" style="font-size:0.85rem; color:var(--text-secondary);">Status</span>
-                </div>
-                <button id="static-back-btn" class="btn btn-outline" style="border-color:var(--accent-blue); color:var(--accent-blue);">← Back</button>
-            </div>
+            <div id="maths-nav-header" class="hidden" style="margin:30px 0; padding-bottom:15px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between;">
+                <div>
+                    <h2 id="maths-header-title" style="margin:0; font-family:'JetBrains Mono';">Maths</h2>
+                    <span id="maths-header-subtitle" style="font-size:0.85rem; color:var(--text-secondary);">Status</span>
+                </div>
+                <button id="static-back-btn" class="btn btn-outline" style="border-color:var(--accent-blue); color:var(--accent-blue);">← Back</button>
+            </div>
 
-            <div id="content-area"></div>
-        </main>
-    </div>
+            <div id="content-area"></div>
+        </main>
+    </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
 
-    <script src="js/firebase-config.js"></script>
-    <script src="js/maths_data.js"></script>
-    <script src="js/curriculum.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/maths_data.js"></script>
+    <script src="js/curriculum.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
