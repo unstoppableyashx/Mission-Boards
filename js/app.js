@@ -262,7 +262,7 @@ function renderMathsExpanded(chNum, data, uid) {
     }, 100);
 }
 
-// --- 8. SMART VIDEO CARD (With Gradient Blocker) ---
+// --- 8. SMART VIDEO CARD (Fixed Seek Bar & Logo) ---
 function createSmartVideoCard(subject, title, videoId) {
     const divId = 'player-wrapper-' + videoId;
     const overlayId = 'pause-overlay-' + videoId;
@@ -350,5 +350,6 @@ function renderLockMode(lastTime) {
 function renderSundayMode() {
     uiContent.innerHTML = `<h1 style="color:white; text-align:center; grid-column:1/-1">SUNDAY REVISION</h1>`;
 }
+
 
 
