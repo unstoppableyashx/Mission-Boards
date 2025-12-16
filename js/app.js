@@ -262,7 +262,7 @@ function renderMathsExpanded(chNum, data, uid) {
     }, 100);
 }
 
-// --- 8. SMART VIDEO CARD (Transparent Pause Shield) ---
+// --- 8. SMART VIDEO CARD (Invisible Logic) ---
 function createSmartVideoCard(subject, title, videoId) {
     const divId = 'player-wrapper-' + videoId;
     const overlayId = 'pause-overlay-' + videoId;
@@ -278,23 +278,17 @@ function createSmartVideoCard(subject, title, videoId) {
             
             <div id="${divId}" style="position:absolute; top:0; left:0; width:100%; height:100%;"></div>
 
-            <div id="${overlayId}" class="pause-overlay" onclick="resumeVideo('${videoId}')">
-                <div class="resume-icon-container">
-                    <span class="resume-icon">▶</span>
-                </div>
-            </div>
+            <div id="${overlayId}" class="pause-overlay" onclick="resumeVideo('${videoId}')"></div>
 
-            <div style="position:absolute; top:0; left:0; width:100%; height:60px; z-index:20;"></div>
-            <div style="position:absolute; bottom:40px; right:0; width:100px; height:50px; z-index:20;"></div>
+            <div style="position:absolute; top:0; left:0; width:100%; height:15%; z-index:20;"></div>
+            <div style="position:absolute; bottom:12%; right:0; width:15%; height:15%; z-index:20;"></div>
 
-            <button class="custom-fs-btn" onclick="toggleFullScreen('${cardId}')">
-                ⛶
-            </button>
+            <button class="custom-fs-btn" onclick="toggleFullScreen('${cardId}')"></button>
         </div>
     </div>`;
 }
 
-// --- 9. YOUTUBE API + KEYBOARD LOGIC ---
+// --- 9. API LOGIC ---
 function initSmartPlayer(videoId) {
     const divId = 'player-wrapper-' + videoId;
     if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
@@ -304,7 +298,9 @@ function initSmartPlayer(videoId) {
 
     players[videoId] = new YT.Player(divId, {
         height: '100%', width: '100%', videoId: videoId,
-        playerVars: { 'modestbranding': 1, 'rel': 0, 'controls': 1, 'fs': 0, 'iv_load_policy': 3 },
+        playerVars: { 
+            'modestbranding': 1, 'rel': 0, 'controls': 1, 'fs': 0, 'iv_load_policy': 3 
+        },
         events: {
             'onStateChange': (event) => onPlayerStateChange(event, videoId)
         }
@@ -314,21 +310,23 @@ function initSmartPlayer(videoId) {
 function onPlayerStateChange(event, videoId) {
     const overlay = document.getElementById('pause-overlay-' + videoId);
     
-    // Playing
+    // State 1 = Playing
     if (event.data === 1) {
-        if(overlay) overlay.style.display = 'none';
-        activePlayerId = videoId; // Set active for keyboard shortcuts
+        if(overlay) overlay.style.display = 'none'; // Shield hata do, controls use karne do
+        activePlayerId = videoId;
     } 
-    // Paused (2) or Ended (0)
+    // State 2 = Paused, 0 = Ended
     else if (event.data === 2 || event.data === 0) {
-        if(overlay) overlay.style.display = 'flex'; // Show transparent shield
+        if(overlay) overlay.style.display = 'block'; // Shield laga do (Transparent)
     }
 }
 
+// Resume Function (Jab invisible shield par click ho)
 window.resumeVideo = function(videoId) {
     const player = players[videoId];
     if (player && typeof player.playVideo === 'function') {
         player.playVideo();
+        // Turant shield hatao taaki user ko wait na karna pade
         document.getElementById('pause-overlay-' + videoId).style.display = 'none';
     }
 };
@@ -350,3 +348,4 @@ function renderLockMode(lastTime) {
 function renderSundayMode() {
     uiContent.innerHTML = `<h1 style="color:white; text-align:center; grid-column:1/-1">SUNDAY REVISION</h1>`;
 }
+
