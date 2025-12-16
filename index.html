@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -10,150 +10,44 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     
     <style>
-        /* --- PROFESSIONAL SLATE THEME --- */
         :root {
-            --bg-body: #0f172a;       /* Deep Slate */
-            --bg-card: #1e293b;       /* Lighter Slate */
-            --bg-hover: #334155;      /* Hover State */
-            
-            --text-main: #f8fafc;     /* White text */
-            --text-secondary: #94a3b8; /* Muted text */
-            
-            --accent-blue: #3b82f6;   /* Action Color */
-            --accent-green: #10b981;  /* Success Color */
-            --accent-red: #ef4444;    /* Error/Lock Color */
-            
+            --bg-body: #0f172a; --bg-card: #1e293b; --bg-hover: #334155;
+            --text-main: #f8fafc; --text-secondary: #94a3b8;
+            --accent-blue: #3b82f6; --accent-green: #10b981; --accent-red: #ef4444;
             --border-color: #334155;
-            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3);
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            background-color: var(--bg-body);
-            color: var(--text-main);
-            font-family: 'Inter', sans-serif;
-            height: 100vh;
-            display: flex; flex-direction: column;
-            overflow-x: hidden;
-        }
-
-        /* Utilities */
+        body { background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
         .hidden { display: none !important; }
         .container { width: 100%; max-width: 1280px; margin: 0 auto; padding: 0 24px; }
 
-        /* --- LOADING SCREEN --- */
-        #loading-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-body); z-index: 2000;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-        }
-        .spinner {
-            width: 40px; height: 40px;
-            border: 3px solid var(--bg-hover);
-            border-top-color: var(--accent-blue);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-bottom: 16px;
-        }
+        /* Loading & Auth */
+        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-body); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner { width: 40px; height: 40px; border: 3px solid var(--bg-hover); border-top-color: var(--accent-blue); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 16px; }
         @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* --- LOGIN SCREEN --- */
         #auth-container { flex: 1; display: flex; align-items: center; justify-content: center; }
-        .auth-card {
-            background: var(--bg-card);
-            padding: 48px; border-radius: 16px;
-            border: 1px solid var(--border-color);
-            width: 100%; max-width: 400px;
-            text-align: center;
-            box-shadow: var(--shadow);
-        }
-        .auth-card h1 { font-family: 'JetBrains Mono'; letter-spacing: -1px; margin-bottom: 10px; }
+        .auth-card { background: var(--bg-card); padding: 40px; border-radius: 16px; border: 1px solid var(--border-color); width: 100%; max-width: 400px; text-align: center; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; background: var(--bg-body); border: 1px solid var(--border-color); color: white; border-radius: 8px; outline: none; }
         
-        input {
-            width: 100%; padding: 12px 16px; margin-bottom: 15px;
-            background: var(--bg-body); border: 1px solid var(--border-color);
-            color: var(--text-main); border-radius: 8px; outline: none;
-            transition: 0.2s;
-        }
-        input:focus { border-color: var(--accent-blue); }
-
-        /* --- BUTTONS --- */
-        .btn {
-            display: inline-flex; align-items: center; justify-content: center;
-            padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 0.9rem;
-            cursor: pointer; border: none; transition: 0.2s; text-decoration: none;
-        }
-        .btn-primary { background: var(--accent-blue); color: white; width: 100%; }
-        .btn-primary:hover { background: #2563eb; transform: translateY(-1px); }
-        
-        .btn-outline {
-            background: transparent; border: 1px solid var(--border-color);
-            color: var(--text-secondary); width: auto;
-        }
-        .btn-outline:hover { border-color: var(--text-main); color: var(--text-main); }
-        
-        .btn-danger {
-            background: rgba(239, 68, 68, 0.1); color: var(--accent-red);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-        }
-        .btn-danger:hover { background: rgba(239, 68, 68, 0.2); }
-
-        /* --- DASHBOARD --- */
-        .navbar {
-            background: var(--bg-card); border-bottom: 1px solid var(--border-color);
-            height: 70px; display: flex; align-items: center;
-            position: sticky; top: 0; z-index: 100;
-        }
+        /* UI Elements */
+        .navbar { background: var(--bg-card); border-bottom: 1px solid var(--border-color); height: 70px; display: flex; align-items: center; position: sticky; top: 0; z-index: 100; }
         .nav-content { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .day-badge { background: rgba(59,130,246,0.15); color: var(--accent-blue); padding: 4px 10px; border-radius: 6px; font-family: 'JetBrains Mono'; margin-left: 10px; }
         
-        .day-badge {
-            background: rgba(59, 130, 246, 0.15); color: var(--accent-blue);
-            padding: 4px 10px; border-radius: 6px; font-size: 0.8rem;
-            font-family: 'JetBrains Mono'; margin-left: 10px;
-        }
+        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; }
+        .btn-primary { background: var(--accent-blue); color: white; width: 100%; }
+        .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); }
+        .btn-danger { background: rgba(239,68,68,0.1); color: var(--accent-red); border: 1px solid rgba(239,68,68,0.2); }
 
-        /* --- STATUS BAR --- */
-        .status-panel {
-            background: var(--bg-card); border-radius: 12px;
-            border: 1px solid var(--border-color);
-            padding: 20px; margin: 30px 0;
-            display: flex; align-items: center; justify-content: space-between;
-        }
-        .progress-track {
-            width: 100%; height: 8px; background: var(--bg-body);
-            border-radius: 4px; overflow: hidden; margin-top: 8px;
-        }
-        .progress-fill {
-            height: 100%; background: var(--accent-green);
-            width: 0%; transition: width 0.6s ease;
-        }
+        .status-panel { background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); padding: 20px; margin: 30px 0; display: flex; align-items: center; }
+        .progress-track { width: 100%; height: 8px; background: var(--bg-body); border-radius: 4px; overflow: hidden; margin-top: 8px; }
+        .progress-fill { height: 100%; background: var(--accent-green); width: 0%; transition: width 0.6s ease; }
 
-        /* --- VIDEO GRID --- */
-        #content-area {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-            gap: 24px; padding-bottom: 50px;
-        }
-        .video-card {
-            background: var(--bg-card); border: 1px solid var(--border-color);
-            border-radius: 12px; overflow: hidden; transition: transform 0.2s;
-        }
-        .video-card:hover { transform: translateY(-2px); border-color: var(--text-secondary); }
-        
-        .video-header {
-            padding: 16px; border-bottom: 1px solid var(--border-color);
-            background: rgba(255, 255, 255, 0.02);
-        }
-        .video-subject {
-            font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;
-            color: var(--text-secondary); font-weight: 600; margin-bottom: 4px;
-        }
-        .video-title {
-            font-size: 1rem; font-weight: 500; white-space: nowrap;
-            overflow: hidden; text-overflow: ellipsis;
-        }
-
+        #content-area { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 24px; padding-bottom: 50px; }
+        .video-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; transition: transform 0.2s; position: relative; }
+        .video-header { padding: 16px; border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.02); }
+        .video-title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .video-subject { font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 1px; }
     </style>
 </head>
 <body>
@@ -165,13 +59,12 @@
 
     <div id="auth-container" class="container">
         <div class="auth-card">
-            <h1>MISSION BOARDS</h1>
+            <h1 style="font-family:'JetBrains Mono'; margin-bottom:10px;">MISSION BOARDS</h1>
             <p style="color:var(--text-secondary); margin-bottom:20px;">Strategic Command Center</p>
-            
             <form id="login-form">
                 <input type="email" id="email" placeholder="Cadet ID" required>
                 <input type="password" id="password" placeholder="Access Code" required>
-                <button type="submit" class="btn btn-primary">INITIALIZE PROTOCOL</button>
+                <button type="submit" class="btn btn-primary">INITIALIZE</button>
             </form>
             <p id="auth-error" style="color:var(--accent-red); margin-top:15px; font-size:0.9rem;"></p>
         </div>
@@ -180,33 +73,27 @@
     <div id="app-container" class="hidden">
         <nav class="navbar">
             <div class="container nav-content">
-                <div style="font-weight: 700; font-size: 1.2rem; display:flex; align-items:center;">
+                <div style="font-weight:700; font-size:1.2rem; display:flex; align-items:center;">
                     MISSION BOARDS <span id="day-badge" class="day-badge">DAY 01</span>
                 </div>
                 <div style="display:flex; gap:10px;">
-                    <button class="btn btn-outline" onclick="window.open('https://google.com', '_blank')" style="padding: 6px 12px;">Intel</button>
-                    <button id="logout-btn" class="btn btn-danger" style="padding: 6px 12px;">Abort</button>
+                    <button id="logout-btn" class="btn btn-danger" style="padding:6px 12px;">Abort</button>
                 </div>
             </div>
         </nav>
 
         <main class="container">
-            <div class="status-panel">
-                <div style="flex: 1; margin-right: 40px;">
+            <div id="global-status" class="status-panel">
+                <div style="flex:1; margin-right:40px;">
                     <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:var(--text-secondary);">
-                        <span>Mission Completion</span>
-                        <span id="progress-percent">0%</span>
+                        <span>Mission Completion</span> <span id="progress-percent">0%</span>
                     </div>
-                    <div class="progress-track">
-                        <div class="progress-fill" id="progress-bar"></div>
-                    </div>
+                    <div class="progress-track"><div class="progress-fill" id="progress-bar"></div></div>
                 </div>
-                <div id="timer-display" style="font-family:'JetBrains Mono'; color:var(--accent-green); font-weight:600;">
-                    SYNCING...
-                </div>
+                <div id="timer-display" style="font-family:'JetBrains Mono'; color:var(--accent-green);">SYNCING...</div>
             </div>
 
-            <div id="maths-nav-header" class="hidden" style="margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+            <div id="maths-nav-header" class="hidden" style="margin: 30px 0; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <h2 id="maths-header-title" style="font-family: 'JetBrains Mono'; margin: 0; color: var(--text-main);">Maths Chapter</h2>
                     <span id="maths-header-subtitle" style="font-size: 0.85rem; color: var(--text-secondary);">Progress Status</span>
@@ -229,6 +116,5 @@
     <script src="js/curriculum.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/app.js"></script>
-
 </body>
 </html>
