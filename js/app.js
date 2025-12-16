@@ -18,6 +18,7 @@ const uiBackBtn = document.getElementById('static-back-btn');
 
 let currentUserDoc = null; 
 let players = {}; 
+let activePlayerId = null; // Keyboard control focus
 
 // --- 2. AUTHENTICATION ---
 auth.onAuthStateChanged(async (user) => {
@@ -30,6 +31,33 @@ auth.onAuthStateChanged(async (user) => {
         if(uiLoading) uiLoading.classList.add('hidden');
         if(uiAuthBox) uiAuthBox.classList.remove('hidden');
         if(uiAppBox) uiAppBox.classList.add('hidden');
+    }
+});
+
+// GLOBAL KEYBOARD CONTROLS
+document.addEventListener('keydown', (e) => {
+    if (!activePlayerId || !players[activePlayerId]) return;
+    const player = players[activePlayerId];
+    if(typeof player.getPlayerState !== 'function') return;
+
+    if (e.code === 'Space') {
+        e.preventDefault();
+        const state = player.getPlayerState();
+        if (state === 1) player.pauseVideo();
+        else player.playVideo();
+    }
+    else if (e.code === 'ArrowLeft') {
+        const time = player.getCurrentTime();
+        player.seekTo(Math.max(time - 5, 0));
+    }
+    else if (e.code === 'ArrowRight') {
+        const time = player.getCurrentTime();
+        const duration = player.getDuration();
+        player.seekTo(Math.min(time + 5, duration));
+    }
+    else if (e.key.toLowerCase() === 'f') {
+        const cardId = 'card-' + activePlayerId;
+        toggleFullScreen(cardId);
     }
 });
 
@@ -96,7 +124,6 @@ function renderStudyMode(day, mathsCh, uid) {
     if(uiTimer) uiTimer.innerHTML = `<span style="color:#10b981">● ACTIVE</span>`;
     players = {}; 
 
-    // TRIGGER CARDS (Fix for "Video not playing")
     ['physics', 'chemistry'].forEach(sub => {
         if(dayData.videos[sub]) {
             const vid = dayData.videos[sub];
@@ -173,14 +200,13 @@ function renderMathsExpanded(chNum, data, uid) {
     if(uiMathsHeader) uiMathsHeader.classList.remove('hidden');
     if(uiMathsTitle) uiMathsTitle.innerText = `Ch ${chNum}: ${data.title}`;
     if(uiMathsSub) {
-        uiMathsSub.innerText = `Daily Progress: ${dailyCount}/2 Chapters`;
+        uiMathsSub.innerText = limitReached ? "Limit Reached" : "Active Session";
         uiMathsSub.style.color = limitReached ? '#ef4444' : '#10b981';
     }
 
     uiContent.innerHTML = ''; 
     players = {}; 
 
-    // TRIGGER CARDS FOR MATHS TOO
     data.videos.forEach((vid, index) => {
         uiContent.innerHTML += createTriggerCard(`Part ${index + 1}`, vid.title, vid.id);
     });
@@ -234,28 +260,24 @@ function createTriggerCard(subject, title, videoId) {
     </div>`;
 }
 
-// --- 8B. ACTIVATION LOGIC (Injects Player + Shields) ---
+// --- 8B. ACTIVATION LOGIC (Player + Shields) ---
 window.activateAndFullscreen = function(videoId, cardId) {
     const wrapper = document.getElementById('player-wrapper-' + videoId);
     const trigger = wrapper.previousElementSibling;
-    
     trigger.style.display = 'none';
 
-    // Inject Structure
     wrapper.innerHTML = `
         <div id="yt-target-${videoId}"></div>
         <div id="pause-overlay-${videoId}" class="pause-overlay" onclick="resumeVideo('${videoId}')"></div>
-        <div style="position:absolute; top:0; left:0; width:100%; height:60px; z-index:20;"></div> <div class="gradient-blocker" onclick="toggleFullScreen('${cardId}')">
+        <div style="position:absolute; top:0; left:0; width:100%; height:60px; z-index:20;"></div>
+        <div class="gradient-blocker" onclick="toggleFullScreen('${cardId}')">
             <span class="custom-fs-btn"></span>
         </div>
     `;
 
-    // Initialize API
     players[videoId] = new YT.Player(`yt-target-${videoId}`, {
         height: '100%', width: '100%', videoId: videoId,
-        playerVars: { 
-            'modestbranding': 1, 'rel': 0, 'controls': 1, 'fs': 0, 'iv_load_policy': 3, 'autoplay': 1 
-        },
+        playerVars: { 'modestbranding': 1, 'rel': 0, 'controls': 1, 'fs': 0, 'iv_load_policy': 3, 'autoplay': 1 },
         events: {
             'onStateChange': (event) => onPlayerStateChange(event, videoId)
         }
@@ -264,14 +286,15 @@ window.activateAndFullscreen = function(videoId, cardId) {
     toggleFullScreen(cardId);
 };
 
-// --- 9. UTILS (Pause/Fullscreen) ---
+// --- 9. UTILS ---
 function onPlayerStateChange(event, videoId) {
     const overlay = document.getElementById('pause-overlay-' + videoId);
     if (event.data === 1) { // Playing
         if(overlay) overlay.style.display = 'none';
+        activePlayerId = videoId;
     } 
-    else if (event.data === 2 || event.data === 0) { // Paused/Ended
-        if(overlay) overlay.style.display = 'block'; // Transparent Shield
+    else if (event.data === 2 || event.data === 0) { // Paused
+        if(overlay) overlay.style.display = 'block';
     }
 }
 
