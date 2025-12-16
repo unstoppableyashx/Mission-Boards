@@ -1,4 +1,4 @@
-// js/app.js - FINAL (Strip Shields + Auto Fullscreen)
+// js/app.js - FINAL STABLE VERSION
 
 // --- 1. DOM ELEMENTS ---
 const uiContent = document.getElementById('content-area');
@@ -33,7 +33,6 @@ auth.onAuthStateChanged(async (user) => {
     }
 });
 
-// BACK BUTTON
 if (uiBackBtn) {
     uiBackBtn.addEventListener('click', () => {
         if (document.fullscreenElement) document.exitFullscreen();
@@ -87,7 +86,7 @@ function renderDashboard(user, uid) {
     renderStudyMode(currentDay, mathsCh, uid);
 }
 
-// --- 5. RENDER STUDY MODE (Dashboard Cards) ---
+// --- 5. RENDER STUDY MODE ---
 function renderStudyMode(day, mathsCh, uid) {
     if (typeof curriculum === 'undefined') { uiContent.innerHTML = `<h3>Data Error</h3>`; return; }
     const dayData = curriculum.find(d => d.day === day);
@@ -97,16 +96,14 @@ function renderStudyMode(day, mathsCh, uid) {
     if(uiTimer) uiTimer.innerHTML = `<span style="color:#10b981">● ACTIVE</span>`;
     players = {}; 
 
-    // Phys/Chem (Now using Trigger Mode for Auto-Fullscreen)
+    // TRIGGER CARDS (Fix for "Video not playing")
     ['physics', 'chemistry'].forEach(sub => {
         if(dayData.videos[sub]) {
             const vid = dayData.videos[sub];
-            // Use Trigger Card: User clicks -> Video loads & goes Fullscreen
             uiContent.innerHTML += createTriggerCard(sub, vid.title, vid.id);
         }
     });
 
-    // Maths Section
     if (typeof mathsCurriculum !== 'undefined') renderMathsSection(mathsCh, uid);
 
     const btnDiv = document.createElement('div');
@@ -137,18 +134,15 @@ function renderMathsSection(mathsCh, uid) {
     wrapper.innerHTML = `<h3 style="color:#3b82f6; font-family:'JetBrains Mono'; margin-bottom:20px;">📐 MATHEMATICS ZONE</h3>
         <div id="maths-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:20px;"></div>`;
 
-    // Maths Active Card
     const activeCard = document.createElement('div');
     activeCard.className = 'video-card';
     activeCard.style.border = "1px solid #3b82f6";
-    activeCard.innerHTML = `
-        <div class="video-header" style="background:rgba(59, 130, 246, 0.1)">
+    activeCard.innerHTML = `<div class="video-header" style="background:rgba(59, 130, 246, 0.1)">
             <div class="video-subject" style="color:#3b82f6">CURRENT • CH ${mathsCh}</div>
             <div class="video-title">${mData.title}</div>
         </div>
-        <div style="padding:40px; text-align:center; cursor:pointer;" onclick="document.getElementById('open-maths-btn').click()">
-            <div style="font-size:3rem; margin-bottom:10px;">▶</div>
-            <button class="btn btn-primary" id="open-maths-btn">OPEN PLAYLIST</button>
+        <div style="padding:40px; text-align:center;">
+            <button class="btn btn-primary" id="open-maths-btn">OPEN PLAYLIST ▶</button>
         </div>`;
 
     const nextCh = parseInt(mathsCh) + 1;
@@ -164,10 +158,7 @@ function renderMathsSection(mathsCh, uid) {
 
     uiContent.appendChild(wrapper);
     setTimeout(() => {
-        document.getElementById('open-maths-btn').addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent double trigger
-            renderMathsExpanded(mathsCh, mData, uid);
-        });
+        document.getElementById('open-maths-btn').addEventListener('click', () => renderMathsExpanded(mathsCh, mData, uid));
     }, 100);
 }
 
@@ -181,16 +172,15 @@ function renderMathsExpanded(chNum, data, uid) {
     if(uiGlobalStatus) uiGlobalStatus.classList.add('hidden');
     if(uiMathsHeader) uiMathsHeader.classList.remove('hidden');
     if(uiMathsTitle) uiMathsTitle.innerText = `Ch ${chNum}: ${data.title}`;
-    
     if(uiMathsSub) {
-        uiMathsSub.innerText = limitReached ? "Daily Limit Reached" : "Active Session";
+        uiMathsSub.innerText = `Daily Progress: ${dailyCount}/2 Chapters`;
         uiMathsSub.style.color = limitReached ? '#ef4444' : '#10b981';
     }
 
     uiContent.innerHTML = ''; 
     players = {}; 
 
-    // Use Trigger Cards here too for consistency
+    // TRIGGER CARDS FOR MATHS TOO
     data.videos.forEach((vid, index) => {
         uiContent.innerHTML += createTriggerCard(`Part ${index + 1}`, vid.title, vid.id);
     });
@@ -221,7 +211,7 @@ function renderMathsExpanded(chNum, data, uid) {
     }, 100);
 }
 
-// --- 8A. TRIGGER CARD (Initial State: Just an Image) ---
+// --- 8A. TRIGGER CARD (Image + Play Button) ---
 function createTriggerCard(subject, title, videoId) {
     const cardId = 'card-' + videoId;
     return `
@@ -244,37 +234,53 @@ function createTriggerCard(subject, title, videoId) {
     </div>`;
 }
 
-// --- 8B. ACTIVATION LOGIC (Loads Player + Shields) ---
+// --- 8B. ACTIVATION LOGIC (Injects Player + Shields) ---
 window.activateAndFullscreen = function(videoId, cardId) {
     const wrapper = document.getElementById('player-wrapper-' + videoId);
-    const trigger = wrapper.previousElementSibling; // The play button div
+    const trigger = wrapper.previousElementSibling;
     
-    // 1. Hide the play trigger
     trigger.style.display = 'none';
 
-    // 2. Inject the Shields & Player Structure
+    // Inject Structure
     wrapper.innerHTML = `
         <div id="yt-target-${videoId}"></div>
-        
-        <div class="shield-top"></div>
-
-        <div class="shield-suggestions"></div>
-
-        <div class="gradient-blocker" onclick="toggleFullScreen('${cardId}')">
+        <div id="pause-overlay-${videoId}" class="pause-overlay" onclick="resumeVideo('${videoId}')"></div>
+        <div style="position:absolute; top:0; left:0; width:100%; height:60px; z-index:20;"></div> <div class="gradient-blocker" onclick="toggleFullScreen('${cardId}')">
             <span class="custom-fs-btn"></span>
         </div>
     `;
 
-    // 3. Initialize YouTube Player
+    // Initialize API
     players[videoId] = new YT.Player(`yt-target-${videoId}`, {
         height: '100%', width: '100%', videoId: videoId,
         playerVars: { 
             'modestbranding': 1, 'rel': 0, 'controls': 1, 'fs': 0, 'iv_load_policy': 3, 'autoplay': 1 
+        },
+        events: {
+            'onStateChange': (event) => onPlayerStateChange(event, videoId)
         }
     });
 
-    // 4. Trigger Fullscreen
     toggleFullScreen(cardId);
+};
+
+// --- 9. UTILS (Pause/Fullscreen) ---
+function onPlayerStateChange(event, videoId) {
+    const overlay = document.getElementById('pause-overlay-' + videoId);
+    if (event.data === 1) { // Playing
+        if(overlay) overlay.style.display = 'none';
+    } 
+    else if (event.data === 2 || event.data === 0) { // Paused/Ended
+        if(overlay) overlay.style.display = 'block'; // Transparent Shield
+    }
+}
+
+window.resumeVideo = function(videoId) {
+    const player = players[videoId];
+    if (player && typeof player.playVideo === 'function') {
+        player.playVideo();
+        document.getElementById('pause-overlay-' + videoId).style.display = 'none';
+    }
 };
 
 window.toggleFullScreen = function(elementId) {
@@ -287,6 +293,5 @@ window.toggleFullScreen = function(elementId) {
     }
 };
 
-// --- MODES ---
 function renderLockMode() { uiContent.innerHTML = `<h1 style="color:red;text-align:center;padding:50px;">COOLDOWN ACTIVE</h1>`; }
 function renderSundayMode() { uiContent.innerHTML = `<h1 style="color:white;text-align:center;">SUNDAY</h1>`; }
