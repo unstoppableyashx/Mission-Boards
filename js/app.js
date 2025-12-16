@@ -262,7 +262,7 @@ function renderMathsExpanded(chNum, data, uid) {
     }, 100);
 }
 
-// --- 8. SMART VIDEO CARD (Fixed Seek Bar & Logo) ---
+// --- 8. SMART VIDEO CARD (Precision Blocker) ---
 function createSmartVideoCard(subject, title, videoId) {
     const divId = 'player-wrapper-' + videoId;
     const overlayId = 'pause-overlay-' + videoId;
@@ -282,8 +282,8 @@ function createSmartVideoCard(subject, title, videoId) {
 
             <div style="position:absolute; top:0; left:0; width:100%; height:60px; z-index:20;"></div>
 
-            <div class="gradient-blocker">
-                <button class="custom-fs-btn" onclick="toggleFullScreen('${cardId}')" title="Full Screen"></button>
+            <div class="gradient-blocker" onclick="toggleFullScreen('${cardId}')" title="Full Screen">
+                <span class="custom-fs-btn"></span>
             </div>
 
         </div>
@@ -350,6 +350,7 @@ function renderLockMode(lastTime) {
 function renderSundayMode() {
     uiContent.innerHTML = `<h1 style="color:white; text-align:center; grid-column:1/-1">SUNDAY REVISION</h1>`;
 }
+
 
 
 
