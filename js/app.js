@@ -1,4 +1,4 @@
-// js/app.js - FINAL STABLE VERSION
+// js/app.js - FINAL (Strips + Auto Fullscreen)
 
 // --- 1. DOM ELEMENTS ---
 const uiContent = document.getElementById('content-area');
@@ -18,7 +18,7 @@ const uiBackBtn = document.getElementById('static-back-btn');
 
 let currentUserDoc = null; 
 let players = {}; 
-let activePlayerId = null; // Keyboard control focus
+let activePlayerId = null; 
 
 // --- 2. AUTHENTICATION ---
 auth.onAuthStateChanged(async (user) => {
@@ -34,7 +34,7 @@ auth.onAuthStateChanged(async (user) => {
     }
 });
 
-// GLOBAL KEYBOARD CONTROLS
+// GLOBAL KEYBOARD
 document.addEventListener('keydown', (e) => {
     if (!activePlayerId || !players[activePlayerId]) return;
     const player = players[activePlayerId];
@@ -47,17 +47,13 @@ document.addEventListener('keydown', (e) => {
         else player.playVideo();
     }
     else if (e.code === 'ArrowLeft') {
-        const time = player.getCurrentTime();
-        player.seekTo(Math.max(time - 5, 0));
+        player.seekTo(Math.max(player.getCurrentTime() - 5, 0));
     }
     else if (e.code === 'ArrowRight') {
-        const time = player.getCurrentTime();
-        const duration = player.getDuration();
-        player.seekTo(Math.min(time + 5, duration));
+        player.seekTo(Math.min(player.getCurrentTime() + 5, player.getDuration()));
     }
     else if (e.key.toLowerCase() === 'f') {
-        const cardId = 'card-' + activePlayerId;
-        toggleFullScreen(cardId);
+        toggleFullScreen('card-' + activePlayerId);
     }
 });
 
@@ -77,10 +73,7 @@ async function loadUserProgress(uid) {
         const doc = await userRef.get();
 
         if (!doc.exists) {
-            const defaultData = { 
-                currentDay: 1, mathsChapter: 1, mathsDailyCount: 0, 
-                mathsLastDate: new Date().toDateString(), progress: 0, email: auth.currentUser.email 
-            };
+            const defaultData = { currentDay: 1, mathsChapter: 1, mathsDailyCount: 0, mathsLastDate: new Date().toDateString(), progress: 0, email: auth.currentUser.email };
             await userRef.set(defaultData);
             currentUserDoc = defaultData;
             renderDashboard(defaultData, uid);
@@ -124,6 +117,7 @@ function renderStudyMode(day, mathsCh, uid) {
     if(uiTimer) uiTimer.innerHTML = `<span style="color:#10b981">● ACTIVE</span>`;
     players = {}; 
 
+    // TRIGGER CARDS FOR DASHBOARD (Auto Fullscreen)
     ['physics', 'chemistry'].forEach(sub => {
         if(dayData.videos[sub]) {
             const vid = dayData.videos[sub];
@@ -164,7 +158,8 @@ function renderMathsSection(mathsCh, uid) {
     const activeCard = document.createElement('div');
     activeCard.className = 'video-card';
     activeCard.style.border = "1px solid #3b82f6";
-    activeCard.innerHTML = `<div class="video-header" style="background:rgba(59, 130, 246, 0.1)">
+    activeCard.innerHTML = `
+        <div class="video-header" style="background:rgba(59, 130, 246, 0.1)">
             <div class="video-subject" style="color:#3b82f6">CURRENT • CH ${mathsCh}</div>
             <div class="video-title">${mData.title}</div>
         </div>
@@ -199,6 +194,7 @@ function renderMathsExpanded(chNum, data, uid) {
     if(uiGlobalStatus) uiGlobalStatus.classList.add('hidden');
     if(uiMathsHeader) uiMathsHeader.classList.remove('hidden');
     if(uiMathsTitle) uiMathsTitle.innerText = `Ch ${chNum}: ${data.title}`;
+    
     if(uiMathsSub) {
         uiMathsSub.innerText = limitReached ? "Limit Reached" : "Active Session";
         uiMathsSub.style.color = limitReached ? '#ef4444' : '#10b981';
@@ -237,7 +233,7 @@ function renderMathsExpanded(chNum, data, uid) {
     }, 100);
 }
 
-// --- 8A. TRIGGER CARD (Image + Play Button) ---
+// --- 8A. TRIGGER CARD ---
 function createTriggerCard(subject, title, videoId) {
     const cardId = 'card-' + videoId;
     return `
@@ -260,7 +256,7 @@ function createTriggerCard(subject, title, videoId) {
     </div>`;
 }
 
-// --- 8B. ACTIVATION LOGIC (Player + Shields) ---
+// --- 8B. ACTIVATION LOGIC (Strips + Fullscreen) ---
 window.activateAndFullscreen = function(videoId, cardId) {
     const wrapper = document.getElementById('player-wrapper-' + videoId);
     const trigger = wrapper.previousElementSibling;
@@ -268,8 +264,13 @@ window.activateAndFullscreen = function(videoId, cardId) {
 
     wrapper.innerHTML = `
         <div id="yt-target-${videoId}"></div>
+        
         <div id="pause-overlay-${videoId}" class="pause-overlay" onclick="resumeVideo('${videoId}')"></div>
-        <div style="position:absolute; top:0; left:0; width:100%; height:60px; z-index:20;"></div>
+        
+        <div class="shield-top"></div>
+
+        <div class="shield-middle"></div>
+
         <div class="gradient-blocker" onclick="toggleFullScreen('${cardId}')">
             <span class="custom-fs-btn"></span>
         </div>
