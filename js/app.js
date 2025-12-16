@@ -1,4 +1,4 @@
-﻿// js/app.js - FINAL VERSION (Static HTML Back Button)
+// js/app.js - FINAL VERSION
 
 // --- 1. DOM ELEMENTS ---
 const uiContent = document.getElementById('content-area');
@@ -10,12 +10,12 @@ const uiLoading = document.getElementById('loading-screen');
 const uiAuthBox = document.getElementById('auth-container');
 const uiAppBox = document.getElementById('app-container');
 
-// NEW ELEMENTS from HTML
+// Specific Maths Elements
 const uiMathsHeader = document.getElementById('maths-nav-header');
 const uiMathsTitle = document.getElementById('maths-header-title');
 const uiMathsSub = document.getElementById('maths-header-subtitle');
+const uiGlobalStatus = document.getElementById('global-status');
 const uiBackBtn = document.getElementById('static-back-btn');
-const uiStatusPanel = document.querySelector('.status-panel');
 
 let currentUserDoc = null; 
 
@@ -29,10 +29,11 @@ auth.onAuthStateChanged(async (user) => {
     } else {
         if(uiLoading) uiLoading.classList.add('hidden');
         if(uiAuthBox) uiAuthBox.classList.remove('hidden');
+        if(uiAppBox) uiAppBox.classList.add('hidden');
     }
 });
 
-// GLOBAL BACK BUTTON LISTENER (Ek baar attach karein)
+// BACK BUTTON LISTENER
 if (uiBackBtn) {
     uiBackBtn.addEventListener('click', () => {
         if (currentUserDoc && auth.currentUser) {
@@ -61,17 +62,17 @@ async function loadUserProgress(uid) {
             renderDashboard(currentUserDoc, uid);
         }
     } catch (error) {
-        alert("Data Load Error: " + error.message);
+        console.error("Data Error:", error);
     }
 }
 
-// --- 4. DASHBOARD CONTROLLER ---
+// --- 4. DASHBOARD RENDERER ---
 function renderDashboard(user, uid) {
     const currentDay = user.currentDay || 1;
     const mathsCh = user.mathsChapter || 1;
     
-    // UI RESET: Show Status Panel, Hide Maths Header
-    if(uiStatusPanel) uiStatusPanel.classList.remove('hidden');
+    // UI RESET
+    if(uiGlobalStatus) uiGlobalStatus.classList.remove('hidden');
     if(uiMathsHeader) uiMathsHeader.classList.add('hidden');
     
     // UI Updates
@@ -127,8 +128,7 @@ function renderStudyMode(day, mathsCh, uid) {
     uiContent.appendChild(btnDiv);
 
     setTimeout(() => {
-        const btn = document.getElementById('complete-day-btn');
-        if(btn) btn.addEventListener('click', async () => {
+        document.getElementById('complete-day-btn').addEventListener('click', async () => {
             if(!confirm("Did you complete Physics & Chemistry?")) return;
             await db.collection('users').doc(uid).update({ currentDay: day + 1, progress: (day/30)*100, lastCompletedAt: new Date() });
             location.reload();
@@ -136,7 +136,7 @@ function renderStudyMode(day, mathsCh, uid) {
     }, 100);
 }
 
-// --- 6. MATHS SECTION UI ---
+// --- 6. MATHS SECTION (Main Page) ---
 function renderMathsSection(mathsCh, uid) {
     if (!mathsCurriculum[mathsCh]) return;
     const mData = mathsCurriculum[mathsCh];
@@ -166,6 +166,7 @@ function renderMathsSection(mathsCh, uid) {
         </div>
     `;
 
+    // Next Locked
     const nextCh = parseInt(mathsCh) + 1;
     let nextHTML = '';
     if (mathsCurriculum[nextCh]) {
@@ -188,33 +189,31 @@ function renderMathsSection(mathsCh, uid) {
     }, 100);
 }
 
-// --- 7. MATHS EXPANDED VIEW ---
+// --- 7. MATHS EXPANDED (Playlist Page) ---
 function renderMathsExpanded(chNum, data, uid) {
     const todayStr = new Date().toDateString();
     let dailyCount = currentUserDoc.mathsDailyCount || 0;
     if (currentUserDoc.mathsLastDate !== todayStr) dailyCount = 0;
     const limitReached = dailyCount >= 2;
 
-    // A. UI SWITCH: Hide Status Panel, Show Maths Header
-    if(uiStatusPanel) uiStatusPanel.classList.add('hidden');
+    // UI SWITCH: Hide Global Status, Show Maths Header
+    if(uiGlobalStatus) uiGlobalStatus.classList.add('hidden');
     if(uiMathsHeader) uiMathsHeader.classList.remove('hidden');
-    
-    // Update Header Text
+
     if(uiMathsTitle) uiMathsTitle.innerText = `Ch ${chNum}: ${data.title}`;
     if(uiMathsSub) {
         uiMathsSub.innerText = `Daily Progress: ${dailyCount}/2 Chapters`;
         uiMathsSub.style.color = limitReached ? '#ef4444' : '#10b981';
     }
 
-    // B. Clear Content for Videos
-    uiContent.innerHTML = '';
+    uiContent.innerHTML = ''; // Clear main content
 
-    // C. Render Videos
+    // Videos
     data.videos.forEach((vid, index) => {
         uiContent.innerHTML += createSafeVideoCard(`Part ${index + 1}`, vid.title, vid.id);
     });
 
-    // D. Finish Button
+    // Finish Button
     const finishDiv = document.createElement('div');
     finishDiv.style.gridColumn = "1/-1"; finishDiv.style.textAlign = "center"; finishDiv.style.marginTop = "30px";
 
@@ -233,23 +232,21 @@ function renderMathsExpanded(chNum, data, uid) {
         const btn = document.getElementById('finish-maths');
         if(btn && !limitReached) {
             btn.addEventListener('click', async () => {
-                if(!confirm("Honesty Check: Did you complete the target?")) return;
+                if(!confirm("Did you actually complete the target?")) return;
                 await db.collection('users').doc(uid).update({
                     mathsChapter: parseInt(chNum) + 1,
                     mathsDailyCount: dailyCount + 1,
                     mathsLastDate: todayStr
                 });
-                // Reload dashboard via function (faster than reload)
+                // Clean refresh
                 currentUserDoc.mathsChapter = parseInt(chNum) + 1;
-                currentUserDoc.mathsDailyCount = dailyCount + 1;
-                currentUserDoc.mathsLastDate = todayStr;
                 renderDashboard(currentUserDoc, uid);
             });
         }
     }, 100);
 }
 
-// --- 8. HELPER: CREATE SAFE VIDEO CARD ---
+// --- 8. HELPER: SAFE VIDEO CARD (Netlify Compatible) ---
 function createSafeVideoCard(subject, title, videoId) {
     return `
     <div class="video-card">
@@ -263,10 +260,10 @@ function createSafeVideoCard(subject, title, videoId) {
                 src="https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&controls=1&disablekb=0&fs=1" 
                 title="YouTube video player" 
                 frameborder="0" 
-                sandbox="allow-scripts allow-same-origin allow-presentation"
-                referrerpolicy="no-referrer"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowfullscreen>
             </iframe>
+            
             <div style="position:absolute; top:0; left:0; width:100%; height:60px; z-index:20;"></div>
             <div style="position:absolute; bottom:0; right:0; width:150px; height:60px; z-index:20;"></div>
             <div style="position:absolute; bottom:0; left:0; width:100px; height:60px; z-index:20;"></div>
