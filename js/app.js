@@ -262,7 +262,7 @@ function renderMathsExpanded(chNum, data, uid) {
     }, 100);
 }
 
-// --- 8. SMART VIDEO CARD (Invisible Logic) ---
+// --- 8. SMART VIDEO CARD (With Gradient Blocker) ---
 function createSmartVideoCard(subject, title, videoId) {
     const divId = 'player-wrapper-' + videoId;
     const overlayId = 'pause-overlay-' + videoId;
@@ -280,10 +280,12 @@ function createSmartVideoCard(subject, title, videoId) {
 
             <div id="${overlayId}" class="pause-overlay" onclick="resumeVideo('${videoId}')"></div>
 
-            <div style="position:absolute; top:0; left:0; width:100%; height:15%; z-index:20;"></div>
-            <div style="position:absolute; bottom:12%; right:0; width:15%; height:15%; z-index:20;"></div>
+            <div style="position:absolute; top:0; left:0; width:100%; height:60px; z-index:20;"></div>
 
-            <button class="custom-fs-btn" onclick="toggleFullScreen('${cardId}')"></button>
+            <div class="gradient-blocker">
+                <button class="custom-fs-btn" onclick="toggleFullScreen('${cardId}')" title="Full Screen"></button>
+            </div>
+
         </div>
     </div>`;
 }
@@ -348,4 +350,5 @@ function renderLockMode(lastTime) {
 function renderSundayMode() {
     uiContent.innerHTML = `<h1 style="color:white; text-align:center; grid-column:1/-1">SUNDAY REVISION</h1>`;
 }
+
 
