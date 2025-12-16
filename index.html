@@ -155,31 +155,32 @@
         /* Transparent layer to block clicks on "Recommended" but allow viewing */
         .pause-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0) !important; 
+            background: rgba(0,0,0,0) !important; /* Fully Transparent */
             display: none; z-index: 40; cursor: pointer;
         }
 
-        /* --- 2. THE "GRADIENT BLOCKER" (Updated Precision) --- */
+        /* --- 2. THE "GRADIENT BLOCKER" (Precision Fixed) --- */
         .gradient-blocker {
             position: absolute;
-            /* Bottom se 50px upar taaki Seek Bar / Control Line na dhake */
-            bottom: 1px;  
+            
+            /* Seek Bar se upar (Line touch nahi hogi) */
+            bottom: 50px;  
             right: 0;
             
-            /* Width itni taaki Logo dhake, par Settings Icon bach jaye */
+            /* Width kam ki taaki Settings Icon dhak na jaye */
             width: 90px;
             height: 40px;
             
             z-index: 55;
             
-            /* Dark Fade Effect */
+            /* Dark Fade Effect (Sirf Logo ke upar) */
             background: linear-gradient(to left, rgba(0,0,0,0.95), transparent);
             
             /* Clickable Area */
             cursor: pointer;
             pointer-events: auto;
             
-            /* Centering the icon inside */
+            /* Icon Centering */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -282,7 +283,3 @@
 
 </body>
 </html>
-
-
-
-
