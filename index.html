@@ -151,54 +151,54 @@
             overflow: hidden; text-overflow: ellipsis;
         }
 
-        /* --- INVISIBLE PAUSE SHIELD --- */
-        /* Ye video pause hone par click rokega par video dikhai dega */
+        /* --- 1. INVISIBLE PAUSE SHIELD --- */
+        /* Transparent layer to block clicks on "Recommended" but allow viewing */
         .pause-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0) !important; /* Fully Transparent */
+            background: rgba(0,0,0,0) !important; 
             display: none; z-index: 40; cursor: pointer;
         }
 
-        /* --- THE "GRADIENT BLOCKER" (FIXED) --- */
-        /* Blocks YouTube Logo & Redirects, but leaves Seek Bar free */
+        /* --- 2. THE "GRADIENT BLOCKER" (Updated Precision) --- */
         .gradient-blocker {
             position: absolute;
-            bottom: 45px;  /* IMPORTANT: Seek Bar ke liye jagah chhodi hai */
+            /* Bottom se 50px upar taaki Seek Bar / Control Line na dhake */
+            bottom: 50px;  
             right: 0;
-            width: 200px;  /* Width badhai taaki pura "YouTube" dhak jaye */
-            height: 120px; /* Height badhai taaki logo cover ho */
-            z-index: 55;   /* Video ke upar */
             
-            /* Dark Shadow Gradient */
-            background: radial-gradient(circle at bottom right, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.7) 40%, transparent 100%);
+            /* Width itni taaki Logo dhake, par Settings Icon bach jaye */
+            width: 90px;
+            height: 50px;
             
-            pointer-events: auto; /* Click Trap */
+            z-index: 55;
             
-            /* Button Alignment */
+            /* Dark Fade Effect */
+            background: linear-gradient(to left, rgba(0,0,0,0.95), transparent);
+            
+            /* Clickable Area */
+            cursor: pointer;
+            pointer-events: auto;
+            
+            /* Centering the icon inside */
             display: flex;
-            align-items: flex-end;
-            justify-content: flex-end;
-            padding: 10px 15px; 
+            align-items: center;
+            justify-content: center;
         }
 
-        /* --- BIG FULLSCREEN BUTTON (UPDATED) --- */
+        /* --- 3. CUSTOM FULLSCREEN ICON --- */
         .custom-fs-btn {
             background: transparent;
             border: none;
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 2.2rem; /* Bada Icon */
+            color: rgba(255, 255, 255, 0.9); /* Bright White */
+            font-size: 1.8rem;
             cursor: pointer;
-            transition: all 0.2s ease;
+            padding: 0;
             
-            /* Glow effect taaki dark background me dikhe */
-            text-shadow: 0 0 5px rgba(0,0,0,0.8);
+            /* Shadow for visibility */
+            filter: drop-shadow(0 0 2px black);
+            pointer-events: none; /* Let parent handle click */
         }
-
-        .custom-fs-btn:hover {
-            color: #3b82f6;
-            transform: scale(1.15);
-        }
-
+        
         .custom-fs-btn::after {
             content: '⛶';
         }
