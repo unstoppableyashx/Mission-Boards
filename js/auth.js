@@ -1,53 +1,44 @@
-// Auth Controller
+// js/auth.js - Clean Version
 
 const loginForm = document.getElementById('login-form');
 const authError = document.getElementById('auth-error');
-const loadingScreen = document.getElementById('loading-screen');
-const authContainer = document.getElementById('auth-container');
-const appContainer = document.getElementById('app-container');
 
-// 1. Listen for Auth State Changes (Login hone par kya karein)
-auth.onAuthStateChanged((user) => {
-    if (user) {
-        console.log("User detected:", user.email);
-        // User is logged in -> Show App
-        loadingScreen.classList.add('hidden');
-        authContainer.classList.add('hidden');
-        appContainer.classList.remove('hidden');
+// 1. Sirf Login Button ka logic yahan rakhen
+if (loginForm) {
+    loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
         
-        // Load User Data (Hum baad me App.js me banayenge)
-        // loadUserData(user.uid); 
-    } else {
-        console.log("No user found");
-        // User is logged out -> Show Login
-        loadingScreen.classList.add('hidden');
-        authContainer.classList.remove('hidden');
-        appContainer.classList.add('hidden');
-    }
-});
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
 
-// 2. Handle Login Form Submit
-loginForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
+        // Error message reset karein
+        authError.textContent = "Verifying Credentials...";
+        authError.style.color = "#94a3b8"; // Grey text
 
-    authError.textContent = "Authenticating...";
+        auth.signInWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                // Success! App.js apne aap detect kar lega
+                console.log("Login Action Successful");
+                authError.textContent = "Success! Entering System...";
+                authError.style.color = "#10b981"; // Green text
+            })
+            .catch((error) => {
+                console.error("Login Failed:", error);
+                authError.textContent = "Error: " + error.message;
+                authError.style.color = "#ef4444"; // Red text
+            });
+    });
+}
 
-    auth.signInWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-            // Success
-            authError.textContent = "";
-            console.log("Login Successful");
-        })
-        .catch((error) => {
-            // Error
-            console.error(error);
-            authError.textContent = "Error: " + error.message;
-        });
-});
-
-// 3. Handle Logout
-document.getElementById('logout-btn').addEventListener('click', () => {
-    auth.signOut();
-});
+// 2. Logout Button Logic
+const logoutBtn = document.getElementById('logout-btn');
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+        if(confirm("Confirm Abort Mission? (Logout)")) {
+            auth.signOut().then(() => {
+                console.log("Logged Out");
+                location.reload(); 
+            });
+        }
+    });
+}
