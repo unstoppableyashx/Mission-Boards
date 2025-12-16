@@ -154,36 +154,40 @@
             overflow: hidden; text-overflow: ellipsis;
         }
 
-        /* --- INVISIBLE PAUSE SHIELD (For Note Taking) --- */
+        /* --- INVISIBLE PAUSE SHIELD (UPDATED) --- */
         .pause-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0); /* Fully Transparent */
-            display: none; /* Hidden initially */
-            z-index: 40; /* Above video, below controls */
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0) !important; /* Fully Transparent */
+            display: none; /* JS will show this */
+            z-index: 50; /* Above video */
             cursor: pointer;
         }
-        
-        .resume-icon-container {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.4); /* Subtle dark circle */
-            width: 70px; height: 70px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            pointer-events: none;
-        }
-        .resume-icon { font-size: 2rem; color: white; margin-left: 5px; }
 
-        /* --- CUSTOM FULLSCREEN BUTTON --- */
+        /* --- CUSTOM FULLSCREEN BUTTON (UPDATED) --- */
         .custom-fs-btn {
-            position: absolute; bottom: 10px; right: 10px; z-index: 60;
-            background: rgba(0, 0, 0, 0.3); /* Semi-transparent */
-            color: rgba(255, 255, 255, 0.7);
-            border: none; padding: 5px 8px; border-radius: 4px;
-            font-size: 0.8rem; cursor: pointer; transition: 0.2s;
+            position: absolute;
+            bottom: 0; right: 0;
+            width: 60px; height: 60px;
+            z-index: 60;
+            background: rgba(0, 0, 0, 0); /* Invisible background */
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: flex-end;
+            justify-content: flex-end;
+            padding: 15px;
         }
-        .custom-fs-btn:hover {
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
+        
+        /* Subtle Icon Hint */
+        .custom-fs-btn::after {
+            content: '⛶';
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 1.2rem;
+            transition: color 0.3s;
+        }
+        .custom-fs-btn:hover::after {
+            color: rgba(255, 255, 255, 0.9);
         }
 
     </style>
