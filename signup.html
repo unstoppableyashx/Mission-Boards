@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Mission | Student Registration</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root { --bg-dark: #0f172a; --card-bg: #1e293b; --primary: #3b82f6; --text-white: #ffffff; --text-gray: #94a3b8; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--bg-dark); color: var(--text-white); height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .main-container { display: flex; width: 1000px; max-width: 95%; background: var(--card-bg); border-radius: 20px; overflow: hidden; border: 1px solid var(--border); min-height: 600px; }
+        .brand-side { flex: 1; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(15, 23, 42, 0.9) 100%); padding: 40px; display: flex; flex-direction: column; justify-content: center; }
+        .brand-side h1 { font-size: 2.5rem; margin-bottom: 15px; color: white; }
+        .form-side { flex: 1; padding: 40px; display: flex; flex-direction: column; justify-content: center; }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 0.85rem; color: var(--text-gray); margin-bottom: 5px; }
+        .input-wrapper input { width: 100%; padding: 12px; background: #0f172a; border: 1px solid var(--border); border-radius: 8px; color: white; }
+        .submit-btn { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+        
+        /* Google Button Style */
+        .google-btn { width: 100%; padding: 12px; background: white; color: #333; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .divider { display: flex; align-items: center; margin: 20px 0; color: var(--text-gray); font-size: 0.8rem; }
+        .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+        .divider span { padding: 0 10px; }
+
+        @media (max-width: 768px) { .brand-side { display: none; } .form-side { padding: 20px; } }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="brand-side">
+            <h1>Mission Boards</h1>
+            <p style="color:#94a3b8;">Join the disciplined path to success.</p>
+        </div>
+
+        <div class="form-side">
+            <h2 style="margin-bottom:20px;">Create Account</h2>
+
+            <button class="google-btn" onclick="handleGoogleLogin()">
+                <i class="fab fa-google" style="color:#DB4437;"></i> Continue with Google
+            </button>
+
+            <div class="divider"><span>OR REGISTER WITH EMAIL</span></div>
+
+            <form id="signup-form">
+                <div class="input-group"><label>Name</label><div class="input-wrapper"><input type="text" id="name" required></div></div>
+                <div class="input-group"><label>Mobile</label><div class="input-wrapper"><input type="tel" id="mobile" required></div></div>
+                <div class="input-group"><label>Email</label><div class="input-wrapper"><input type="email" id="email" required></div></div>
+                <div class="input-group"><label>Password</label><div class="input-wrapper"><input type="password" id="password" required minlength="6"></div></div>
+                <button type="submit" class="submit-btn" id="submit-btn">Register</button>
+            </form>
+            <div id="msg-box" style="margin-top:15px; text-align:center; font-size:0.9rem;"></div>
+            <p style="text-align:center; margin-top:20px; font-size:0.9rem; color:#94a3b8;">Already have an account? <a href="index.html" style="color:var(--primary);">Login</a></p>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    
+    <script>
+        // --- GOOGLE LOGIN LOGIC ---
+        async function handleGoogleLogin() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            try {
+                const result = await auth.signInWithPopup(provider);
+                const user = result.user;
+                
+                // Check if user exists in DB, if not, create default profile
+                const doc = await db.collection('users').doc(user.uid).get();
+                if (!doc.exists) {
+                    await db.collection('users').doc(user.uid).set({
+                        name: user.displayName,
+                        email: user.email,
+                        role: 'student',
+                        joinedAt: new Date().toISOString(),
+                        currentDay: 1, mathsChapter: 1, progress: 0,
+                        streakCount: 1, // New Streak Feature
+                        lastLoginDate: new Date().toDateString()
+                    });
+                }
+                window.location.href = "index.html";
+            } catch (error) {
+                alert("Google Login Error: " + error.message);
+            }
+        }
+
+        // --- EMAIL REGISTER LOGIC ---
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            const msgBox = document.getElementById('msg-box');
+            
+            const name = document.getElementById('name').value;
+            const mobile = document.getElementById('mobile').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            btn.disabled = true; btn.innerText = "Processing...";
+
+            try {
+                const userCred = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCred.user;
+
+                // 1. Send Verification Email (Fake email prevention)
+                await user.sendEmailVerification();
+
+                // 2. Save Data
+                await db.collection('users').doc(user.uid).set({
+                    name: name, mobile: mobile, email: email, role: 'student',
+                    joinedAt: new Date().toISOString(),
+                    currentDay: 1, mathsChapter: 1, progress: 0,
+                    streakCount: 1, lastLoginDate: new Date().toDateString()
+                });
+
+                msgBox.style.color = "#10b981";
+                msgBox.innerHTML = "Account Created!<br><b>Check your email to verify.</b>";
+                
+                setTimeout(() => window.location.href = "index.html", 3000);
+
+            } catch (error) {
+                btn.disabled = false; btn.innerText = "Register";
+                msgBox.style.color = "#ef4444";
+                msgBox.innerText = error.message;
+            }
+        });
+    </script>
+</body>
+</html>
