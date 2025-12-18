@@ -1,5 +1,5 @@
-// js/app.js - Final Production Version
-// Features: Custom Popups, Strict Timer (1Hr), Watched Tracking, Anti-Spam, Security
+// js/app.js - Final Synced Version (Custom Popups + Strict Timer + Revision Vault + Fullscreen)
+// Version: Production Ready (All Logic Intact)
 
 // ==========================================
 // --- 0. CUSTOM POPUP SYSTEM (REPLACES ALERTS) ---
@@ -563,6 +563,7 @@ window.renderMathPlaylist = function(uid, ch) {
     uiContent.appendChild(finishBtn);
 }
 
+// --- VIDEO PLAYER LOGIC (UPDATED FULLSCREEN + TRACKING) ---
 function createVideoCard(tag, title, id, category = 'science') {
     const cardId = 'card-'+id;
     return `<div class="video-card" id="${cardId}">
@@ -576,7 +577,6 @@ function createVideoCard(tag, title, id, category = 'science') {
     </div>`;
 }
 
-// --- VIDEO PLAYER LOGIC (TRACKING) ---
 window.playVideo = function(vid, cardId, category) {
     const card = document.getElementById(cardId);
     const wrapper = document.getElementById(`wrapper-${vid}`);
@@ -590,9 +590,10 @@ window.playVideo = function(vid, cardId, category) {
         wrapper.style.display = 'block';
         wrapper.innerHTML = `<div id="yt-${vid}"></div>`;
 
+        // FIXED: fs: 1 enables fullscreen button
         players[vid] = new YT.Player(`yt-${vid}`, {
             height: '100%', width: '100%', videoId: vid,
-            playerVars: { 'modestbranding': 1, 'rel': 0, 'fs': 0, 'autoplay': 1, 'playsinline': 1 },
+            playerVars: { 'modestbranding': 1, 'rel': 0, 'fs': 1, 'autoplay': 1, 'playsinline': 1 },
             events: {
                 'onStateChange': (event) => onPlayerStateChange(event, vid, category)
             }
@@ -621,20 +622,37 @@ window.closeVideo = function(vid, cardId) {
 }
 
 // ==========================================
-// --- 8. REVISION & COMPLETION (STRICT MODE) ---
+// --- 8. REVISION (UPDATED: MATHS VAULT) ---
 // ==========================================
 window.renderPreviousDays = function() {
     uiContent.innerHTML = `<div class="section-label">Revision History</div>`;
+    
+    // --- PCB DAYS ---
     if(!currentUserDoc || currentUserDoc.currentDay <= 1) {
          uiContent.innerHTML += `<div style="text-align:center; padding:30px; color:var(--text-muted);">No history available. Complete Day 1 first.</div>`;
-         return;
+    } else {
+        for(let i=1; i<currentUserDoc.currentDay; i++) {
+            const d = globalCurriculum.find(x => x.day === i);
+            uiContent.innerHTML += `<div class="notif-item" onclick="renderDailyContent(${i}, 0, '${auth.currentUser.uid}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                <div><span style="color:var(--success); font-weight:bold; font-size:0.8rem;">DAY ${i}</span> 
+                <span style="color:white; margin-left:8px;">${d?.title || 'Topic'}</span></div>
+                <i class="fas fa-chevron-right" style="color:var(--text-muted);"></i></div>`;
+        }
     }
-    for(let i=1; i<currentUserDoc.currentDay; i++) {
-        const d = globalCurriculum.find(x => x.day === i);
-        uiContent.innerHTML += `<div class="notif-item" onclick="renderDailyContent(${i}, 0, '${auth.currentUser.uid}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-            <div><span style="color:var(--success); font-weight:bold; font-size:0.8rem;">DAY ${i}</span> 
-            <span style="color:white; margin-left:8px;">${d?.title || 'Topic'}</span></div>
-            <i class="fas fa-chevron-right" style="color:var(--text-muted);"></i></div>`;
+
+    // --- MATHS COMPLETED CHAPTERS ---
+    if(currentUserDoc && currentUserDoc.mathsChapter > 1) {
+        uiContent.innerHTML += `<div class="section-label" style="margin-top:25px; border-top:1px solid var(--border); padding-top:15px;">Completed Maths Chapters</div>`;
+        
+        for(let c=1; c < currentUserDoc.mathsChapter; c++) {
+            const m = globalMaths[c];
+            if(m) {
+                uiContent.innerHTML += `<div class="notif-item" onclick="renderMathPlaylist('${auth.currentUser.uid}', '${c}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; border-left: 3px solid #3b82f6;">
+                    <div><span style="color:#3b82f6; font-weight:bold; font-size:0.8rem;">CH ${c}</span> 
+                    <span style="color:white; margin-left:8px;">${m.title}</span></div>
+                    <i class="fas fa-play-circle" style="color:var(--text-muted);"></i></div>`;
+            }
+        }
     }
 }
 
@@ -643,7 +661,7 @@ async function completeDay(uid, day) {
     const userWatched = currentUserDoc.watchedVideos || [];
     const mathsTime = currentUserDoc.mathsSeconds || 0;
     
-    // 1. Check Physics/Chem Videos
+    // 1. Check Physics/Chem
     let pendingVideos = [];
     if (dayData) {
         ['physics', 'chemistry'].forEach(sub => {
@@ -668,7 +686,6 @@ async function completeDay(uid, day) {
         return;
     }
 
-    // 3. Confirmation & Save
     if(await showConfirm("Did you create notes and complete assignments?")) {
         await db.collection('users').doc(uid).update({ 
             currentDay: day + 1, progress: Math.min(((day)/30)*100, 100), lastCompletedAt: new Date() 
