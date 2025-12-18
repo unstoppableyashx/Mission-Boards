@@ -266,11 +266,11 @@ async function syncDatabase() {
         const cSnap = await db.collection('curriculum').orderBy('day').get();
         if (!cSnap.empty) globalCurriculum = cSnap.docs.map(d => d.data());
         
-        // const mSnap = await db.collection('maths_curriculum').get();
-        // if (!mSnap.empty) { 
-        //     globalMaths = {}; 
-        //     mSnap.forEach(d => { globalMaths[d.id] = d.data(); }); 
-        // }
+        const mSnap = await db.collection('maths_curriculum').get();
+        if (!mSnap.empty) { 
+            globalMaths = {}; 
+            mSnap.forEach(d => { globalMaths[d.id] = d.data(); }); 
+        }
     } catch (e) { console.warn("Sync Error: ", e); }
 }
 
@@ -735,4 +735,5 @@ function resetReportForm() {
         reportError.style.display = 'none';
     }
 }
+
 
