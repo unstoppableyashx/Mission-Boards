@@ -33,7 +33,19 @@
             color: var(--text-main); 
             height: 100vh; 
             display: flex; 
-            overflow: hidden; 
+            overflow: hidden;
+            
+            /* --- SECURITY: Block Text Selection --- */
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        /* Allow typing in inputs */
+        input, textarea {
+            user-select: text !important;
+            -webkit-user-select: text !important;
         }
 
         /* Utilities */
@@ -45,6 +57,7 @@
         }
         .btn-primary { background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; box-shadow: 0 4px 15px -3px var(--primary-glow); }
         .btn-primary:active { transform: scale(0.98); }
+        .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
         .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
         
         /* --- 1. AUTH SCREEN --- */
@@ -52,6 +65,7 @@
         .auth-card { background: var(--bg-card); padding: 30px; border-radius: 20px; border: 1px solid var(--border); width: 100%; max-width: 380px; text-align: center; }
         .input-field { width: 100%; padding: 14px; margin-bottom: 12px; background: #0b0f19; border: 1px solid var(--border); color: white; border-radius: 10px; outline: none; font-size: 1rem; }
         .input-field:focus { border-color: var(--primary); }
+        .input-field:disabled { opacity: 0.6; cursor: not-allowed; }
 
         /* Google Button Style */
         .btn-google { background: white; color: #333; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
@@ -60,7 +74,7 @@
         /* --- 2. LAYOUT --- */
         #app-container { display: flex; width: 100%; height: 100%; position: relative; }
 
-        /* Sidebar (Mobile Optimized) */
+        /* Sidebar */
         .sidebar { 
             width: 280px; background: var(--bg-card); border-right: 1px solid var(--border); 
             display: flex; flex-direction: column; padding: 25px; z-index: 1500; 
@@ -120,7 +134,7 @@
         }
         .thumbnail-area:active .play-btn { transform: scale(0.9); }
 
-        /* Cinema Mode (Mobile Fullscreen) */
+        /* Cinema Mode */
         .cinema-mode {
             position: fixed !important; inset: 0 !important; z-index: 9999 !important;
             background: black !important; display: flex; flex-direction: column; justify-content: center;
@@ -136,7 +150,7 @@
             border: 1px solid rgba(255,255,255,0.2); display: none;
         }
 
-        /* --- 4. MODALS (Improved) --- */
+        /* --- 4. MODALS --- */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 3000; backdrop-filter: blur(8px); display: flex; align-items: end; justify-content: center; }
         .modal-box { 
             background: var(--bg-card); width: 100%; max-width: 500px; 
@@ -152,6 +166,16 @@
         .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s infinite linear; margin-bottom: 20px; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        /* Success Message Animation */
+        .success-anim { animation: fadeIn 0.5s ease; text-align: center; padding: 20px; }
+        .check-circle { 
+            width: 60px; height: 60px; background: rgba(16, 185, 129, 0.15); 
+            border-radius: 50%; color: var(--success); font-size: 1.8rem;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 15px auto;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+
         /* Desktop Fix */
         @media (min-width: 769px) {
             .sidebar { transform: translateX(0); position: relative; border-right: 1px solid var(--border); }
@@ -161,11 +185,37 @@
         }
     </style>
 </head>
-<body>
+<body ondragstart="return false">
 
     <div id="loading-screen">
         <div class="spinner"></div>
         <div style="font-family:'JetBrains Mono'; color:var(--text-muted); font-size:0.9rem;">LOADING PORTAL...</div>
+    </div>
+
+    <div id="profile-modal" class="modal-overlay hidden" onclick="if(event.target===this) toggleModal('profile-modal')">
+        <div class="modal-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="margin:0; font-size:1.2rem;">Edit Profile</h3>
+                <i class="fas fa-times" onclick="toggleModal('profile-modal')" style="padding:10px; color:var(--text-muted); cursor:pointer;"></i>
+            </div>
+            
+            <div style="text-align:center; margin-bottom:20px;">
+                <div id="modal-profile-avatar" style="width:70px; height:70px; background:var(--primary); border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:bold; color:white;">S</div>
+            </div>
+
+            <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:5px; display:block;">Full Name <span style="color:var(--danger)">*</span></label>
+            <input type="text" id="edit-name" class="input-field" placeholder="Student Name">
+
+            <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:5px; display:block;">Mobile Number (10 Digits) <span style="color:var(--danger)">*</span></label>
+            <input type="tel" id="edit-mobile" class="input-field" placeholder="Mobile Number" 
+                   maxlength="10" 
+                   oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
+
+            <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:5px; display:block;">Email (Read-only)</label>
+            <input type="email" id="edit-email" class="input-field" disabled style="opacity:0.6; cursor:not-allowed;">
+
+            <button class="btn btn-primary" onclick="saveProfile()" style="margin-top:10px;">Save Changes</button>
+        </div>
     </div>
 
     <div id="announce-modal" class="modal-overlay hidden" onclick="if(event.target===this) toggleModal('announce-modal')">
@@ -175,19 +225,61 @@
                 <i class="fas fa-times" onclick="toggleModal('announce-modal')" style="padding:10px; color:var(--text-muted); cursor:pointer;"></i>
             </div>
             <div id="modal-announce-body" style="max-height:60vh; overflow-y:auto; padding-bottom:20px;">
-                </div>
+            </div>
         </div>
     </div>
 
     <div id="report-modal" class="modal-overlay hidden" onclick="if(event.target===this) toggleModal('report-modal')">
         <div class="modal-box">
-            <h3 style="margin-bottom:10px;">Report an Issue</h3>
-            <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">Describe the bug or problem.</p>
-            <form action="https://api.web3forms.com/submit" method="POST">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 style="margin:0; font-size:1.2rem; color:var(--primary);"><i class="fas fa-headset"></i> Help & Support</h3>
+                <i class="fas fa-times" onclick="toggleModal('report-modal')" style="padding:10px; color:var(--text-muted); cursor:pointer;"></i>
+            </div>
+            
+            <div id="report-success-msg" class="hidden success-anim">
+                <div class="check-circle"><i class="fas fa-check"></i></div>
+                <h4 style="color:white; margin-bottom:8px;">Report Sent Successfully!</h4>
+                <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">
+                    Thank you for your feedback. We will check it and get back to you soon.
+                </p>
+                <button class="btn btn-outline" onclick="resetReportForm()">Send Another</button>
+            </div>
+
+            <form id="ajax-report-form">
+                <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">
+                    Facing an issue? Fill out the form below.
+                </p>
+
                 <input type="hidden" name="access_key" value="301bf00e-0a48-4396-af74-d61d876a84f8">
-                <input type="text" name="name" class="input-field" placeholder="Name" required>
-                <textarea name="message" rows="3" class="input-field" placeholder="Describe issue..." required></textarea>
-                <button type="submit" class="btn btn-primary">SEND REPORT</button>
+                <input type="checkbox" name="botcheck" class="hidden" style="display: none;">
+
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:4px;">Full Name</label>
+                    <input type="text" name="name" class="input-field" placeholder="Enter Name" required>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
+                    <div>
+                        <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:4px;">Email</label>
+                        <input type="email" name="email" class="input-field" placeholder="Enter Email" required>
+                    </div>
+                    <div>
+                        <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:4px;">Mobile</label>
+                        <input type="tel" name="mobile" class="input-field" placeholder="10 Digits" required 
+                               pattern="[0-9]{10}" maxlength="10" 
+                               oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
+                    </div>
+                </div>
+
+                <div style="margin-bottom:15px;">
+                    <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:4px;">Describe Issue</label>
+                    <textarea name="message" rows="4" class="input-field" placeholder="Type your message here..." required></textarea>
+                </div>
+                
+                <button type="submit" id="rep-submit-btn" class="btn btn-primary">
+                    <span>SEND REPORT</span> <i class="fas fa-paper-plane"></i>
+                </button>
+                <p id="rep-error" style="color:var(--danger); font-size:0.85rem; margin-top:10px; display:none; text-align:center;"></p>
             </form>
         </div>
     </div>
@@ -258,11 +350,13 @@
             </div>
 
             <div style="border-top:1px solid var(--border); padding-top:20px; margin-top:20px;">
-                <div style="display:flex; align-items:center; gap:12px; margin-bottom:15px;">
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:15px; cursor:pointer;" onclick="openProfileModal()" title="Edit Profile">
                     <div id="profile-avatar" style="width:40px; height:40px; background:var(--primary); border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold;">S</div>
                     <div>
                         <div id="profile-name" style="font-size:0.9rem; font-weight:600;">Student</div>
-                        <div id="profile-mobile" style="font-size:0.75rem; color:var(--text-muted); font-family:'JetBrains Mono'">...</div>
+                        <div style="font-size:0.75rem; color:var(--primary); display:flex; align-items:center; gap:5px;">
+                            Edit Profile <i class="fas fa-pen" style="font-size:0.65rem;"></i>
+                        </div>
                     </div>
                 </div>
                 <button id="logout-btn" class="btn btn-outline" style="padding:10px; border-color:var(--danger); color:var(--danger);">
@@ -300,8 +394,7 @@
                 </div>
             </div>
 
-            <div id="content-area">
-                </div>
+            <div id="content-area"></div>
         </div>
     </div>
 
@@ -317,7 +410,29 @@
     <script src="js/app.js"></script>
 
     <script>
-        // --- UI HELPERS ---
+        // ----------------------------------------------------
+        // 🔒 SECURITY BLOCK (Added for Protection)
+        // ----------------------------------------------------
+        
+        // 1. Disable Right Click
+        document.addEventListener('contextmenu', event => event.preventDefault());
+
+        // 2. Disable Keyboard Shortcuts (F12, Ctrl+U, Ctrl+Shift+I/J/C)
+        document.addEventListener('keydown', function(e) {
+            // F12
+            if(e.key === 'F12') { e.preventDefault(); return false; }
+            // Ctrl + Shift + I/J/C
+            if(e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) {
+                e.preventDefault(); return false;
+            }
+            // Ctrl + U
+            if(e.ctrlKey && e.key === 'u') { e.preventDefault(); return false; }
+        });
+
+        // ----------------------------------------------------
+        // ⚙️ APP LOGIC
+        // ----------------------------------------------------
+
         function switchNav(el) {
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             el.classList.add('active');
@@ -326,7 +441,14 @@
 
         function toggleModal(id) { 
             const el = document.getElementById(id);
-            el.classList.toggle('hidden');
+            if(el) {
+                el.classList.toggle('hidden');
+                
+                // If closing report modal, reset view after a small delay
+                if(id === 'report-modal' && el.classList.contains('hidden')) {
+                    setTimeout(resetReportForm, 300);
+                }
+            }
         }
         
         function toggleSidebar() { 
@@ -335,12 +457,74 @@
             overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
         }
         
-        // Badge Sync Logic
         setInterval(() => {
             const side = document.getElementById('badge');
             const head = document.getElementById('header-badge');
             if(side && head) head.style.display = side.style.display;
         }, 800);
+
+        // --- AJAX REPORT FORM HANDLER ---
+        const reportForm = document.getElementById('ajax-report-form');
+        const successMsg = document.getElementById('report-success-msg');
+        const reportBtn = document.getElementById('rep-submit-btn');
+        const reportError = document.getElementById('rep-error');
+
+        function resetReportForm() {
+            if(reportForm && successMsg) {
+                reportForm.style.display = 'block';
+                successMsg.classList.add('hidden');
+                reportForm.reset();
+                reportError.style.display = 'none';
+            }
+        }
+
+        if(reportForm) {
+            reportForm.addEventListener('submit', function(e) {
+                e.preventDefault(); // Prevent Redirect
+                
+                // Button Loading State
+                const originalBtnContent = reportBtn.innerHTML;
+                reportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> SENDING...';
+                reportBtn.disabled = true;
+                reportError.style.display = 'none';
+
+                // Send Data via Fetch
+                const formData = new FormData(reportForm);
+                const object = Object.fromEntries(formData);
+                const json = JSON.stringify(object);
+
+                fetch('https://api.web3forms.com/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: json
+                })
+                .then(async (response) => {
+                    let json = await response.json();
+                    if (response.status == 200) {
+                        // Success: Show Thank You Message
+                        reportForm.style.display = 'none';
+                        successMsg.classList.remove('hidden');
+                    } else {
+                        // Error
+                        reportError.innerText = "⚠️ Error: " + json.message;
+                        reportError.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.log(error);
+                    reportError.innerText = "❌ Network Error. Please try again.";
+                    reportError.style.display = 'block';
+                })
+                .finally(() => {
+                    // Restore Button
+                    reportBtn.innerHTML = originalBtnContent;
+                    reportBtn.disabled = false;
+                });
+            });
+        }
     </script>
 </body>
 </html>
