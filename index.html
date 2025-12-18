@@ -183,6 +183,24 @@
             .modal-overlay { align-items: center; }
             .modal-box { border-radius: 20px; border: 1px solid var(--border); }
         }
+        /* Custom Popup Styles */
+            #custom-popup .modal-box {
+                background: rgba(21, 27, 43, 0.95);
+                border: 1px solid var(--border);
+                backdrop-filter: blur(10px);
+                box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+                transform: scale(0.95);
+                transition: transform 0.2s, opacity 0.2s;
+            }
+
+        #custom-popup:not(.hidden) .modal-box {
+            transform: scale(1);
+        }
+
+        #popup-icon.success { color: var(--success); }
+        #popup-icon.error { color: var(--danger); }
+        #popup-icon.warning { color: var(--warning); }
+        #popup-icon.info { color: var(--primary); }
     </style>
 </head>
 <body ondragstart="return false">
@@ -397,7 +415,24 @@
             <div id="content-area"></div>
         </div>
     </div>
-
+    <div id="custom-popup" class="modal-overlay hidden" style="z-index: 20000;">
+        <div class="modal-box" style="text-align: center; max-width: 400px;">
+            <div id="popup-icon" style="font-size: 3rem; margin-bottom: 15px;"></div>
+            
+            <h3 id="popup-title" style="margin-bottom: 10px; color: white;">Title</h3>
+            <p id="popup-msg" style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.95rem;">Message goes here</p>
+    
+            <div id="popup-input-container" class="hidden" style="margin-bottom: 20px;">
+                <input type="text" id="popup-input" class="input-field" placeholder="Type here...">
+            </div>
+    
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button id="btn-cancel" class="btn btn-outline hidden" style="width: auto; padding: 10px 20px;">Cancel</button>
+                <button id="btn-confirm" class="btn btn-primary" style="width: auto; padding: 10px 25px;">OK</button>
+            </div>
+        </div>
+    </div>
+    
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -411,7 +446,7 @@
 
     <script>
         // ----------------------------------------------------
-        // 🔒 SECURITY BLOCK (Added for Protection)
+        // 🔒 SECURITY BLOCK
         // ----------------------------------------------------
         
         // 1. Disable Right Click
@@ -430,7 +465,7 @@
         });
 
         // ----------------------------------------------------
-        // ⚙️ APP LOGIC
+        // ⚙️ APP LOGIC HELPERS
         // ----------------------------------------------------
 
         function switchNav(el) {
@@ -457,6 +492,7 @@
             overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
         }
         
+        // Sync Notification Badges
         setInterval(() => {
             const side = document.getElementById('badge');
             const head = document.getElementById('header-badge');
